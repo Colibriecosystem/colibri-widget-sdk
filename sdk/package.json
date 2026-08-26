@@ -1,0 +1,28 @@
+{
+  "name": "@colibri-terminal/sdk",
+  "version": "1.0.0",
+  "description": "Typed client for the Colibri terminal widget API (window.colibri).",
+  "type": "module",
+  "main": "colibri.js",
+  "module": "colibri.js",
+  "types": "colibri.d.ts",
+  "exports": {
+    ".": {
+      "types": "./colibri.d.ts",
+      "default": "./colibri.js"
+    }
+  },
+  "files": [
+    "colibri.js",
+    "colibri.d.ts",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "license": "UNLICENSED",
+  "private": true,
+  "keywords": [
+    "colibri",
+    "trading",
+    "widget"
+  ]
+}

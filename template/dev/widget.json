@@ -1,0 +1,9 @@
+{
+  "id": "colibri-template",
+  "name": "Colibri Template (dev server)",
+  "version": "1.0.0",
+  "entry": "http://localhost:5173",
+  "surfaces": ["slot", "window"],
+  "permissions": ["marketData", "storage"],
+  "minApiVersion": 1
+}

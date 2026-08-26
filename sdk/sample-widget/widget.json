@@ -1,0 +1,11 @@
+{
+  "id": "colibri-sample",
+  "name": "SDK Sample",
+  "version": "1.0.0",
+  "author": "Colibri",
+  "entry": "index.html",
+  "surfaces": ["slot", "window"],
+  "permissions": ["marketData", "panels", "notifications", "storage"],
+  "egress": [],
+  "minApiVersion": 1
+}

@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Colibri SDK Sample</title>
+    <style>
+      /* The host pushes its palette in as CSS custom properties and keeps them current, so a
+         widget looks native without knowing anything about themes. */
+      :root { color-scheme: dark light; }
+      body {
+        margin: 0;
+        padding: 12px;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-size: calc(13px * var(--colibri-font-scale, 1));
+        background: var(--colibri-background, #0b0e13);
+        color: var(--colibri-body-text, #d8dee9);
+      }
+      h1 { font-size: 1.1em; margin: 0 0 8px; }
+      .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+      button {
+        background: var(--colibri-chrome-surface, #171b23);
+        color: inherit;
+        border: 1px solid var(--colibri-chrome-border, #2a2f3a);
+        border-radius: 4px;
+        padding: 5px 10px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover { border-color: var(--colibri-accent-green, #4caf50); }
+      #meta, #status { font-size: 0.85em; color: var(--colibri-body-text-dim, #8b93a3); }
+      #book { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; font-variant-numeric: tabular-nums; }
+      .ask { color: var(--colibri-accent-red, #e05252); }
+      .bid { color: var(--colibri-accent-green, #4caf50); }
+      code { background: var(--colibri-card-surface, #10141b); padding: 1px 4px; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <h1>Colibri SDK sample</h1>
+    <div id="meta">starting…</div>
+
+    <div class="row">
+      <button id="open">Open ETHUSDT panel</button>
+      <button id="notify">Send a notification</button>
+      <button id="count">Bump stored counter</button>
+    </div>
+
+    <div id="status"></div>
+    <h1 style="margin-top:14px">BTCUSDT — live book</h1>
+    <div id="book">waiting for the terminal…</div>
+
+    <script type="module">
+      // Zero hand-rolled protocol: every call below goes through the SDK.
+      import colibri, { markets, panels, notifications, storage, stream, on } from "./colibri.js";
+
+      const meta = document.getElementById("meta");
+      const status = document.getElementById("status");
+      const bookEl = document.getElementById("book");
+
+      const say = (text) => { status.textContent = text; };
+
+      // The handshake is available synchronously — no await, no ready event.
+      const hs = colibri.handshake();
+      meta.textContent = `${hs.widgetId} · instance ${hs.instanceId.slice(0, 8)} · ${hs.surface} · api ${hs.apiVersion} · scopes: ${hs.grantedScopes.join(", ") || "none"}`;
+
+      // 1. Market data.
+      try {
+        const venues = await markets.exchanges();
+        say(`${venues.exchanges.length} venues available.`);
+      } catch (e) {
+        say(`exchanges failed: ${e.code} — ${e.message}`);
+      }
+
+      // 2. Live stream. The returned function unsubscribes; re-subscription after a bridge
+      //    toggle is the SDK's job, not yours.
+      stream.subscribe("book", { exchange: "BinanceSpot", symbol: "BTCUSDT", depth: 6, hz: 4 }, (data) => {
+        const asks = (data.asks || []).slice(0, 6).reverse();
+        const bids = (data.bids || []).slice(0, 6);
+        bookEl.innerHTML =
+          asks.map((l) => `<div class="ask">${l.price}</div><div class="ask">${l.qty}</div>`).join("") +
+          bids.map((l) => `<div class="bid">${l.price}</div><div class="bid">${l.qty}</div>`).join("");
+      });
+
+      // 3. Drive the terminal.
+      document.getElementById("open").onclick = async () => {
+        try {
+          await panels.add({ content: { exchange: "BinanceSpot", symbol: "ETHUSDT", views: ["orderbook"] }, activate: true });
+          say("opened ETHUSDT.");
+        } catch (e) {
+          say(`open failed: ${e.code} — ${e.message}`);
+        }
+      };
+
+      document.getElementById("notify").onclick = async () => {
+        try {
+          await notifications.raise({ message: "Hello from the SDK sample widget.", severity: "info" });
+          say("notification sent.");
+        } catch (e) {
+          say(`notify failed: ${e.code} — ${e.message}`);
+        }
+      };
+
+      // 4. Durable per-instance storage.
+      document.getElementById("count").onclick = async () => {
+        try {
+          const next = Number((await storage.get("count")) || "0") + 1;
+          await storage.set("count", String(next));
+          say(`counter = ${next} (survives a restart).`);
+        } catch (e) {
+          say(`storage failed: ${e.code} — ${e.message}`);
+        }
+      };
+
+      // 5. Host events: the bridge toggle is the one worth handling — the widget keeps running
+      //    while it is off, it just cannot call.
+      on("bridge", (e) => say(e.enabled ? "API bridge enabled." : "API bridge is OFF in Settings → Widgets."));
+      on("theme", (e) => console.log("theme:", e.theme, e.lang));
+    </script>
+  </body>
+</html>
