@@ -1,0 +1,18 @@
+{
+  "id": "funding-monitor",
+  "name": "Фандинг-монитор (dev)",
+  "version": "1.0.0",
+  "author": "Colibri",
+  "entry": "http://localhost:5173",
+  "surfaces": ["slot", "window"],
+  "permissions": ["notifications", "signalLevels", "storage"],
+  "egress": [
+    "fapi.binance.com",
+    "api.bybit.com",
+    "api.gateio.ws",
+    "api-futures.kucoin.com",
+    "futures.kraken.com",
+    "api.hyperliquid.xyz"
+  ],
+  "minApiVersion": 1
+}

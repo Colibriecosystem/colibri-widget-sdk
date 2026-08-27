@@ -1,0 +1,20 @@
+{
+  "id": "liquidation-radar",
+  "name": "Радар ликвидаций (dev)",
+  "version": "1.0.0",
+  "author": "Colibri",
+  "entry": "http://localhost:5173",
+  "surfaces": ["slot"],
+  "permissions": ["notifications", "signalLevels", "storage"],
+  "egress": [
+    "fstream.binance.com",
+    "ws.okx.com:8443",
+    "www.okx.com",
+    "ws.bitget.com",
+    "fx-ws.gateio.ws",
+    "api.gateio.ws",
+    "stream.bybit.com",
+    "api.bybit.com"
+  ],
+  "minApiVersion": 1
+}
