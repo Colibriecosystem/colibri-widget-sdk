@@ -12,26 +12,26 @@
         padding: 12px;
         font-family: "Segoe UI", system-ui, sans-serif;
         font-size: calc(13px * var(--colibri-font-scale, 1));
-        background: var(--colibri-background, #0b0e13);
-        color: var(--colibri-body-text, #d8dee9);
+        background: var(--colibri-role-background, #0b0e13);
+        color: var(--colibri-role-text, #d8dee9);
       }
       h1 { font-size: 1.1em; margin: 0 0 8px; }
       .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
       button {
-        background: var(--colibri-chrome-surface, #171b23);
+        background: var(--colibri-role-surface, #171b23);
         color: inherit;
-        border: 1px solid var(--colibri-chrome-border, #2a2f3a);
+        border: 1px solid var(--colibri-role-divider, #2a2f3a);
         border-radius: 4px;
         padding: 5px 10px;
         font: inherit;
         cursor: pointer;
       }
-      button:hover { border-color: var(--colibri-accent-green, #4caf50); }
-      #meta, #status { font-size: 0.85em; color: var(--colibri-body-text-dim, #8b93a3); }
+      button:hover { border-color: var(--colibri-role-bullish, #4caf50); }
+      #meta, #status { font-size: 0.85em; color: var(--colibri-role-dim-text, #8b93a3); }
       #book { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; font-variant-numeric: tabular-nums; }
-      .ask { color: var(--colibri-accent-red, #e05252); }
-      .bid { color: var(--colibri-accent-green, #4caf50); }
-      code { background: var(--colibri-card-surface, #10141b); padding: 1px 4px; border-radius: 3px; }
+      .ask { color: var(--colibri-role-bearish, #e05252); }
+      .bid { color: var(--colibri-role-bullish, #4caf50); }
+      code { background: var(--colibri-role-surface, #10141b); padding: 1px 4px; border-radius: 3px; }
     </style>
   </head>
   <body>

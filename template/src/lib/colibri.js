@@ -234,6 +234,36 @@ export const storage = {
 };
 
 /**
+ * Venue requests the TERMINAL performs for you, against the hosts your manifest declares in
+ * `egress` and the user granted at consent.
+ *
+ * Market data is widget-owned: you bring your own venue connections. Venue WebSockets work from
+ * the page directly, but venue REST often does not — many venues send no CORS headers at all
+ * (KuCoin and Kraken Futures among them), and no amount of page-side code can get around that.
+ * `net.fetch` is the way through: the host makes the call, so CORS never enters into it.
+ *
+ * Rules worth knowing before you debug a refusal: https only; GET and POST only; the URL's host
+ * must be covered by a declared-AND-granted `egress` entry (`code: "egress_denied"` otherwise);
+ * redirects are never followed — a 3xx is returned to you as-is, because an allowlist that only
+ * covers the first hop is not an allowlist; and there is a per-instance rate cap
+ * (`code: "rate_limited"`).
+ *
+ * The response `body` is TEXT — the host does not parse a venue's payload for you.
+ *
+ *   const r = await colibri.net.fetch("https://futures.kraken.com/derivatives/api/v3/tickers");
+ *   if (!r.ok) throw new Error(r.code);
+ *   const tickers = JSON.parse(r.body).tickers;
+ */
+export const net = {
+  /**
+   * @param {string} url absolute https URL
+   * @param {{method?: "GET"|"POST", body?: string, contentType?: string}} [init]
+   * @returns {Promise<{ok: boolean, status: number, body: string|null, contentType?: string, code?: string, message?: string}>}
+   */
+  fetch: (url, init) => bridge().net.fetch(url, init),
+};
+
+/**
  * Live channels. Subscriptions are re-issued automatically when the bridge is re-enabled or the
  * host resets the stream, so a widget does not have to notice either — there is no reconnect
  * loop to write, because an in-process bridge cannot "disconnect".
@@ -292,6 +322,8 @@ export const stream = {
 
 /**
  * Host events: `theme` (palette / language / font scale changed), `visibility`,
+ * `surface` (you moved between a slot and a window — the instance is NOT recreated, so this is
+ * the only notice you get, and `handshake().surface` is updated before it fires),
  * `bridge` (the API toggle moved), `grants` (your scopes changed), `streamReset`.
  */
 export function on(event, handler) {
@@ -314,6 +346,7 @@ export default {
   notifications,
   signalLevels,
   storage,
+  net,
   stream,
   on,
 };

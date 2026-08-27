@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import colibri, { markets, storage, stream } from "./lib/colibri.js";
+import colibri, { markets, on, storage, stream } from "./lib/colibri.js";
 
 type Top = { bid?: string; ask?: string; error?: string };
 
@@ -14,7 +14,13 @@ type Top = { bid?: string; ask?: string; error?: string };
  */
 export default function App() {
   // Available synchronously — there is no ready event to wait for.
-  const { widgetId, surface, grantedScopes } = colibri.handshake();
+  const { widgetId, grantedScopes } = colibri.handshake();
+
+  // Where this widget lives can CHANGE without it being recreated — dragging a widget window back
+  // into the grid hands the live instance over, page and all. The handshake is a one-shot
+  // bootstrap, so the move arrives as an event.
+  const [surface, setSurface] = useState(colibri.handshake().surface);
+  useEffect(() => on("surface", (e: any) => setSurface(e.surface)), []);
 
   const [symbol, setSymbol] = useState("BTCUSDT");
   const [top, setTop] = useState<Top>({});
@@ -58,8 +64,8 @@ export default function App() {
     <div
       style={{
         font: "13px/1.5 system-ui, sans-serif",
-        color: "var(--colibri-text, #ddd)",
-        background: "var(--colibri-background, #14171c)",
+        color: "var(--colibri-role-text, #ddd)",
+        background: "var(--colibri-role-background, #14171c)",
         padding: 16,
         minHeight: "100vh",
         boxSizing: "border-box",
@@ -74,20 +80,20 @@ export default function App() {
           font: "inherit",
           padding: "4px 8px",
           color: "inherit",
-          background: "var(--colibri-surface, #1c2027)",
-          border: "1px solid var(--colibri-border, #2a2f38)",
+          background: "var(--colibri-role-surface, #1c2027)",
+          border: "1px solid var(--colibri-role-divider, #2a2f38)",
           borderRadius: 4,
         }}
       />
 
       <div style={{ marginTop: 12, fontVariantNumeric: "tabular-nums" }}>
         {top.error ? (
-          <span style={{ color: "var(--colibri-sell, #e05260)" }}>{top.error}</span>
+          <span style={{ color: "var(--colibri-role-bearish, #e05260)" }}>{top.error}</span>
         ) : (
           <>
-            <span style={{ color: "var(--colibri-buy, #26a17b)" }}>{top.bid ?? "—"}</span>
+            <span style={{ color: "var(--colibri-role-bullish, #26a17b)" }}>{top.bid ?? "—"}</span>
             {" / "}
-            <span style={{ color: "var(--colibri-sell, #e05260)" }}>{top.ask ?? "—"}</span>
+            <span style={{ color: "var(--colibri-role-bearish, #e05260)" }}>{top.ask ?? "—"}</span>
           </>
         )}
       </div>

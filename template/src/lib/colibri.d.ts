@@ -127,6 +127,27 @@ export declare const storage: {
   clear(): Promise<void>;
 };
 
+/** The answer to a {@link net.fetch}. `ok` is false only when the call never reached the venue. */
+export interface NetFetchResult {
+  ok: boolean;
+  /** The venue's HTTP status, or 0 when the call never got that far. */
+  status: number;
+  /** The response TEXT — the host does not parse a venue's payload for you. */
+  body: string | null;
+  contentType?: string;
+  /** `egress_denied` | `rate_limited` | `net_failed` | `net_timeout` | `net_too_large` | `bad_request`. */
+  code?: string;
+  message?: string;
+}
+
+/**
+ * Venue requests the TERMINAL performs for you, against your declared-and-granted `egress` hosts.
+ * The way past venues that ship no CORS headers; https + GET/POST only, redirects never followed.
+ */
+export declare const net: {
+  fetch(url: string, init?: { method?: "GET" | "POST"; body?: string; contentType?: string }): Promise<NetFetchResult>;
+};
+
 export interface StreamFrame {
   type: string;
   data: unknown;
@@ -143,7 +164,7 @@ export declare const stream: {
   onAny(handler: (frame: StreamFrame) => void): () => void;
 };
 
-export type HostEvent = "theme" | "visibility" | "bridge" | "grants" | "streamReset";
+export type HostEvent = "theme" | "visibility" | "surface" | "bridge" | "grants" | "streamReset";
 
 /** Subscribe to a host event; returns an unsubscribe function. */
 export declare function on(event: HostEvent, handler: (payload: never) => void): () => void;
@@ -165,6 +186,9 @@ export interface ColibriBridge {
     remove(key: string): Promise<{ ok: boolean; code?: string }>;
     keys(): Promise<{ ok: boolean; keys?: string[]; code?: string }>;
     clear(): Promise<{ ok: boolean; code?: string }>;
+  };
+  net: {
+    fetch(url: string, init?: { method?: "GET" | "POST"; body?: string; contentType?: string }): Promise<NetFetchResult>;
   };
   stream: {
     subscribe(channel: Channel, args?: Record<string, unknown>): void;
