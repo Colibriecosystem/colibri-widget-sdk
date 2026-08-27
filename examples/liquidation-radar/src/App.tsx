@@ -6,7 +6,7 @@ import { stringsFor } from "./i18n";
 /** How many prints the table keeps. Enough to read a cascade; bounded so a burst cannot grow it. */
 const MAX_ROWS = 300;
 
-/** A venue that has connected but delivered nothing for this long is reported as silent. */
+/** How long a venue may be connected without EVER delivering before it is called silent. */
 const SILENT_AFTER_MS = 120_000;
 
 const STORAGE_KEY = { threshold: "threshold", sound: "sound" };
@@ -19,6 +19,7 @@ export default function App() {
   const [prints, setPrints] = useState<LiqPrint[]>([]);
   const [status, setStatus] = useState<Record<string, VenueStatus>>({});
   const [lastPrintAt, setLastPrintAt] = useState<Record<string, number>>({});
+  const [connectedSince, setConnectedSince] = useState<Record<string, number>>({});
   const [threshold, setThreshold] = useState(500_000);
   const [soundOn, setSoundOn] = useState(true);
   const [now, setNow] = useState(Date.now());
@@ -50,7 +51,20 @@ export default function App() {
           setStatus((m) => ({ ...m, [print.venue]: "live" }));
           announce(print, settings.current, lastChime);
         },
-        (st) => setStatus((m) => ({ ...m, [feed.venue]: m[feed.venue] === "live" && st === "connected" ? "live" : st })),
+        (st) => {
+          setStatus((m) => ({ ...m, [feed.venue]: m[feed.venue] === "live" && st === "connected" ? "live" : st }));
+          // The grace period runs from the last time the socket came up, so a reconnect restarts
+          // it rather than inheriting the previous session's clock.
+          setConnectedSince((m) => {
+            if (st === "connected") return { ...m, [feed.venue]: Date.now() };
+            if (st === "connecting" || st === "failed") {
+              const next = { ...m };
+              delete next[feed.venue];
+              return next;
+            }
+            return m;
+          });
+        },
       ),
     );
 
@@ -93,7 +107,8 @@ export default function App() {
         </button>
         <div style={S.status}>
           {FEEDS.map((f) => (
-            <VenueChip key={f.venue} venue={f.venue} status={effectiveStatus(status[f.venue], lastPrintAt[f.venue], now)} s={s} />
+            <VenueChip key={f.venue} venue={f.venue}
+              status={effectiveStatus(status[f.venue], lastPrintAt[f.venue], connectedSince[f.venue], now)} s={s} />
           ))}
         </div>
       </div>
@@ -167,26 +182,41 @@ function announce(
 
 /**
  * "Connected" is not "working". A socket can complete its handshake, accept every subscription and
- * then deliver nothing — so a venue that has been quiet well past any plausible gap is reported as
- * silent rather than healthy.
+ * then deliver nothing at all — measured on a real machine against Binance, where even a control
+ * stream stayed silent while control messages round-tripped.
+ *
+ * What distinguishes that from a calm market is whether the venue has EVER delivered, not how long
+ * ago it last did. Liquidations are sporadic — a market-wide feed can easily go minutes between
+ * prints — so a "quiet for N seconds" rule would flag every venue on a calm night and make the
+ * indicator worthless. Once a venue has printed once it is proven, and stays proven until the
+ * socket itself reports trouble.
  */
-function effectiveStatus(status: VenueStatus | undefined, lastPrint: number | undefined, now: number): VenueStatus | "silent" {
+function effectiveStatus(
+  status: VenueStatus | undefined,
+  lastPrint: number | undefined,
+  connectedSince: number | undefined,
+  now: number,
+): VenueStatus | "silent" | "waiting" {
   if (status === undefined) return "connecting";
   if (status !== "live" && status !== "connected") return status;
-  if (lastPrint === undefined || now - lastPrint > SILENT_AFTER_MS) return "silent";
-  return "live";
+  if (lastPrint !== undefined) return "live";
+  if (connectedSince !== undefined && now - connectedSince > SILENT_AFTER_MS) return "silent";
+  return "waiting";
 }
 
-function VenueChip({ venue, status, s }: { venue: string; status: VenueStatus | "silent"; s: ReturnType<typeof stringsFor> }) {
+function VenueChip({ venue, status, s }: {
+  venue: string; status: VenueStatus | "silent" | "waiting"; s: ReturnType<typeof stringsFor>;
+}) {
   const tone =
     status === "live" ? "var(--colibri-role-bullish, #26a17b)"
-      : status === "failed" ? "var(--colibri-role-bearish, #e05260)"
+      : status === "failed" || status === "silent" ? "var(--colibri-role-bearish, #e05260)"
         : "var(--colibri-role-dim-text, #8b93a3)";
   const label =
     status === "live" ? s.statusLive
       : status === "failed" ? s.statusFailed
         : status === "silent" ? s.statusSilent
-          : s.statusConnecting;
+          : status === "waiting" ? s.statusWaiting
+            : s.statusConnecting;
   return <span style={S.chip} title={`${venue}: ${label}`}><span style={{ color: tone }}>●</span> {venue}</span>;
 }
 

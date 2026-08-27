@@ -24,6 +24,7 @@ const ru = {
   statusSilent: "нет данных",
   statusFailed: "недоступна",
   statusConnecting: "подключение",
+  statusWaiting: "ждём принтов",
 };
 
 const en: typeof ru = {
@@ -51,6 +52,7 @@ const en: typeof ru = {
   statusSilent: "no data",
   statusFailed: "unavailable",
   statusConnecting: "connecting",
+  statusWaiting: "awaiting prints",
 };
 
 export type Strings = typeof ru;
