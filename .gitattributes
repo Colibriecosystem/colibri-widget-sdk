@@ -1,0 +1,5 @@
+# Built widget bundles are PUBLISHED ARTIFACTS, not sources. The terminal pins a bundle by hashing
+# its file bytes, and Nest's submission check re-hashes an extracted archive and expects the same
+# value — so git must never rewrite line endings inside one, or the identical bundle would hash
+# differently on a Windows clone than on a Linux one.
+examples/*/dist/** -text
