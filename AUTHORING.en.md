@@ -122,9 +122,18 @@ chip instead of the green `bundled · hash ✓`.
 Apply once, and any user can see your widget in the catalog and install it in one click. It all
 happens inside the terminal: **Nest → Add widget → "Listed"**.
 
-1. **Sign in.** The button opens a GitHub page with a short code. You type no password anywhere:
-   the registry drives the device flow itself, GitHub's token never reaches your machine, and the
-   terminal receives a key of the registry's own — it does exactly one thing, submit on your behalf.
+1. **Your author ID.** There is no sign-in and no password. Publish your first widget and Nest
+   issues you an ID; the terminal keeps it and sends it with everything you publish afterwards.
+
+   **Copy it and store it somewhere safe.** It is how the registry knows your widgets are yours —
+   it is what stops anyone else updating them, and equally what lets anyone holding it publish as
+   you. It is issued once and cannot be issued again, so if you lose it you cannot update your own
+   widgets; write to us and we will sort it out by hand. Moving to a new machine, paste it into the
+   same field.
+
+   **Name** and **e-mail** are optional. The name is what the catalog shows; leave it blank and the
+   listing simply carries none. The e-mail is only so we can reach you about your widgets — it is
+   never shown to anyone.
 2. **The archive** — the same Pack-for-Nest button. Its contract (the hash reproduces from the
    extracted content) is precisely what the registry checks.
 3. **The card** — what you fill in on the form. Two axes, deliberately distinct:
