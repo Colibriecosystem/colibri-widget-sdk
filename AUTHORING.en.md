@@ -119,14 +119,15 @@ chip instead of the green `bundled · hash ✓`.
 
 ## Stage 3 · Listed
 
-Coming with the community registry (next beta): apply once, and any user can see your widget in
-the catalog and install it in one click.
+Apply once, and any user can see your widget in the catalog and install it in one click. It all
+happens inside the terminal: **Nest → Add widget → "Listed"**.
 
-You can prepare today:
-
-1. **The archive** — the same Pack-for-Nest button: its contract (the hash reproduces from the
-   extracted content) is precisely what the registry's CI will check.
-2. **The card** — an editorial row in `catalog.json`. Two axes, deliberately distinct:
+1. **Sign in.** The button opens a GitHub page with a short code. You type no password anywhere:
+   the registry drives the device flow itself, GitHub's token never reaches your machine, and the
+   terminal receives a key of the registry's own — it does exactly one thing, submit on your behalf.
+2. **The archive** — the same Pack-for-Nest button. Its contract (the hash reproduces from the
+   extracted content) is precisely what the registry checks.
+3. **The card** — what you fill in on the form. Two axes, deliberately distinct:
    a **category** is a key from our curated list, one per widget, picked at submission; **tags**
    are your own, capability-focused, any number, displayed verbatim.
 
@@ -141,8 +142,16 @@ You can prepare today:
 ```
 
 A card cannot overstate or understate permissions: everything security-relevant — name, version,
-surfaces, permissions, network hosts — derives from the archive's own manifest; the catalog row
-only decorates (descriptions, category, tags).
+surfaces, permissions, network hosts — derives from the archive's own manifest, **using the same
+code the desktop verifies with**. The form asks only for decoration (descriptions, category, tags),
+which is why it has no security field at all.
+
+After the upload the checks run server-side and the window shows them one by one. A refusal names
+the specific check — your diagnostic, not "submission rejected".
+
+Before your first submission, read [policies/CONTENT.en.md](policies/CONTENT.en.md): what may be
+published, and why asking for a spare permission is a bad idea. What happens if a widget is taken
+down: [policies/TAKEDOWN.en.md](policies/TAKEDOWN.en.md).
 
 ---
 
