@@ -17,7 +17,7 @@ cards; this page is the long version of each.
 ## Stage 1 · Development
 
 **Load unpacked…** serves your folder **in place** — nothing is copied. DevTools are always
-offered, logs are full, and the **watch-and-reload** checkbox rebuilds the widget about half a
+offered, logs are full, and the **Hot reload** toggle rebuilds the widget about half a
 second after every save (a burst of saves collapses into one reload). **Reload** does the same by
 hand. Everything runs inside the terminal — no browser needed if you so choose: DevTools open
 straight from the widget's menu.
