@@ -1,6 +1,8 @@
 # @colibri-terminal/sdk
 
 > Русская версия — [README.md](README.md), она же основная.
+>
+> The author's path — three stages, from a folder to the catalog: [AUTHORING.en.md](AUTHORING.en.md).
 
 The typed client for the Colibri widget API. A widget is a web page the terminal hosts in an
 embedded WebView; this package is the ergonomic way to talk to the terminal from inside it.
