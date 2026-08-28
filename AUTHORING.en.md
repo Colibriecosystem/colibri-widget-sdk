@@ -45,6 +45,13 @@ my-widget/
 DNS label (`a–z`, `0–9`, hyphens). `entry` is a path inside the folder. A full starter project
 (TS + React, no framework lock-in) lives in [`template/`](template/).
 
+The optional `icon` field is an image path inside the bundle (PNG, up to 512 KB): the terminal
+renders it everywhere the widget is visible — the catalog card and listing, the My-widgets list,
+the Notifications window Widgets tab, the bottom-strip bookmark, the panel and window headers,
+the 🧩 menu. Without one, the 🧩 glyph shows everywhere. And on `surfaces`: only a widget that
+declares `"window"` can be opened as a standalone window and pinned to the bottom bookmark strip —
+a slot-only widget lives in panels exclusively.
+
 One mode exists only here: `entry` may point at a dev server (`http://localhost:5173/`) — that is
 how Vite HMR works. An ordinary install refuses such a manifest; the allowance is deliberate and
 scoped to the unpacked mode.

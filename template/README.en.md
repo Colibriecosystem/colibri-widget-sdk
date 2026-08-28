@@ -12,7 +12,7 @@ npm install
 npm run build
 ```
 
-Then, in the terminal: **Settings → Widgets → «Разработка» → «Загрузить распакованный…»** and pick
+Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
 the **`dist/`** folder (that one, not the project root). The terminal asks for the permissions
 declared in `public/widget.json`. Accept, then press 🧩 on an empty panel and choose the widget.
 

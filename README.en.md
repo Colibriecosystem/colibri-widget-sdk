@@ -86,13 +86,13 @@ a forgotten check cannot pass a failure off as data. Switch on `code`, never on 
 try {
   await notifications.raise({ message: "" });
 } catch (e) {
-  if (e.code === "bridge_disabled") { /* the user turned the API bridge off in Settings */ }
+  if (e.code === "bridge_disabled") { /* the user turned the API bridge off in Nest */ }
   else if (e.code === "bad_request") { /* your payload */ }
 }
 ```
 
 `bridge_disabled` (503) is worth handling explicitly: the user can switch the API bridge off in
-**Settings → Widgets**, which leaves your widget *running* but API-blind. You also get a `bridge`
+**Nest → Settings**, which leaves your widget *running* but API-blind. You also get a `bridge`
 event on both edges, so you can show a degraded state and recover without a reload.
 
 Three more your widget can meet, all of them about limits the user set rather than bugs in your
@@ -130,6 +130,7 @@ install step and no toolchain the terminal cares about — if it emits HTML, it 
   "name": "My Widget",
   "version": "1.0.0",
   "entry": "index.html",
+  "icon": "icon.png",
   "surfaces": ["slot"],
   "permissions": ["marketData"],
   "minApiVersion": 1
@@ -141,7 +142,14 @@ install step and no toolchain the terminal cares about — if it emits HTML, it 
 asked to consent to — declare only what you use, since a manifest that grows a permission asks
 again.
 
-Then, in the terminal: **Settings → Widgets → «Разработка» → «Загрузить распакованный…»** and pick
+The optional `icon` field is an image path inside the bundle (PNG, up to 512 KB): the terminal
+renders it everywhere the widget is visible — the catalog card and listing, the My-widgets list,
+the Notifications window Widgets tab, the bottom-strip bookmark, the panel and window headers,
+the 🧩 menu. Without one, the 🧩 glyph shows everywhere. And on `surfaces`: only a widget that
+declares `"window"` can be opened as a standalone window and pinned to the bottom bookmark strip —
+a slot-only widget lives in panels exclusively.
+
+Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
 that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep
 editing is the folder the widget runs from. Place it with the 🧩 button on an empty panel.
 
