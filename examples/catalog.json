@@ -2,7 +2,7 @@
   "widgets": [
     {
       "id": "liquidation-radar",
-      "category": "alerts",
+      "tags": ["alerts", "liquidations"],
       "descriptionEn": "Live liquidation feed across Binance, OKX, Bitget, Gate and Bybit — market-wide, with size buckets and a sound threshold.",
       "descriptionRu": "Живая лента ликвидаций по Binance, OKX, Bitget, Gate и Bybit — по всему рынку, с корзинами по размеру и звуковым порогом.",
       "featured": true,
@@ -10,7 +10,7 @@
     },
     {
       "id": "funding-monitor",
-      "category": "analytics",
+      "tags": ["analytics", "funding"],
       "descriptionEn": "Funding rates across six venues, annualized and sorted by extremity, with settlement countdowns and threshold alerts.",
       "descriptionRu": "Ставки финансирования по шести биржам — в годовых, отсортированы по экстремальности, с обратным отсчётом расчёта и алертами по порогу.",
       "featured": true,
