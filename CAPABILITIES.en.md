@@ -34,7 +34,7 @@ These are not settings — they are construction. No manifest permission lifts t
 | Boundary | What exactly | Why |
 | --- | --- | --- |
 | Network is declared-only | A page request goes only to your own origin and the hosts in `egress`; everything else is refused. Declare EVERY host, exchange WebSocket hosts included | At install the user sees where the widget can send data. The list is a promise, and the terminal enforces it |
-| `127.0.0.1` is unreachable | Loopback and IP literals cannot go into `egress`, and the page cannot reach them. That covers both the terminal's own Local API and any local program | The Local API is the door for native programs with a different trust model; a widget doesn't need it — the `window.colibri` bridge does more, with no port and no token. For a channel to "my own local backend" see the architecture section |
+| `127.0.0.1` is unreachable | Loopback and IP literals cannot go into `egress`, and the page cannot reach them. That covers both the terminal's own Local API and any local program. This is a final decision, not a temporary limitation — see pattern 4 below | The Local API is the door for native programs with a different trust model; a widget doesn't need it — the `window.colibri` bridge does more, with no port and no token |
 | No files, no processes | No filesystem, OS, or other-process access. Storage is `colibri.storage`, a 5 MB key-value store per widget | A widget must be exactly as safe as its consent claims — and a consent cannot honestly describe "access to the whole computer" |
 | Nothing runs while the terminal is closed | A widget lives as long as the terminal does. There are no background services | A widget is part of the terminal, not a separate program |
 | Rate and money limits | 300 bridge calls per minute per widget; `colibri.net.fetch` has its own budget; per-connection trading budgets (default $250 per order, 12 orders per minute — the user can lift them) | A bug in a loop must not cost the user money or CPU |
@@ -75,17 +75,30 @@ reading accounts, trading under a grant — all of it is available this way, wit
 all. The price: your UI is not inside the terminal, there is no Nest catalog, and the user
 trusts your exe wholesale — the platform verifies and revokes nothing here.
 
-### 4 · Widget page + a local backend — not supported yet
+### 4 · Widget page + a local backend — not supported. The decision is final
 
-The tempting combination — "UI in the terminal, compute in my local program" — runs into the
-`127.0.0.1` boundary: the page→local-process channel is closed today, and there is no way to
-declare it in a manifest. **A sanctioned mechanism for this class of tools is under
-consideration** — the decision will be announced here and in the changelog.
+The combination — "UI in the terminal, compute in my local program" — was considered and
+**rejected**. The reason is not that a local program "might be dangerous" in the abstract, but
+what the platform can vouch for: a widget bundle is hashed, its rights are granted through
+consent and revoked in one click — while a local exe can be neither hashed, nor revoked, nor
+contained. A consent that says "this widget is safe" while the product is really "widget + exe"
+would be a lie. So the boundary follows what the terminal executes itself: **bundled (JS/WASM)
+or hosted — and nothing third**.
 
-If your tool is exactly this: gather all data access into one transport module (so a channel
-change touches nothing else), build the UI as pattern 3 for now (your own page in a browser — it
-will move into a widget almost unchanged) — and write to us: live examples move the decision
-faster than abstractions.
+What this means in practice if your tool today is a page + a local backend:
+
+- **Hosted — the path with no core rewrite.** Your server already serves both the page and the
+  API from one origin — move it from `127.0.0.1` to your own domain, point `entry` at the URL,
+  and everything works as it did: the page talks to its own origin (that's same-origin — no CORS,
+  no `egress` entries needed), and the server opens the exchange WebSockets. The price: the
+  server is now yours to run — infrastructure, accounts, and user data flowing through it (the
+  consent shows that).
+- **Bundled — full citizenship at the cost of a rewrite.** The core goes to WASM (Pyodide for
+  Python) or JS; exchange connections open from the page (see the README on market data). It is
+  real work, but only this path gives the catalog, the pinned hash, and independence from your
+  server.
+- **Staying a native program (pattern 3) remains a first-class path.** The Local API is not
+  going anywhere; you simply live without a UI inside the terminal.
 
 ## Rules of a good widget
 
