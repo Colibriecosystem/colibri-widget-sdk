@@ -166,6 +166,8 @@ down: [policies/TAKEDOWN.en.md](policies/TAKEDOWN.en.md).
 
 ## Where next
 
+- [CAPABILITIES.en.md](CAPABILITIES.en.md) — the widget environment: what works, what doesn't,
+  and how to pick an architecture (read before designing).
 - [README.en.md](README.en.md) — the `window.colibri` SDK: routes, channels, `colibri.net.fetch`.
 - [`template/`](template/) — the starter project.
 - [`examples/`](examples/) — the terminal's two reference widgets with committed `dist/` builds.
