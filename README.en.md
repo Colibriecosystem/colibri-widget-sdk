@@ -31,8 +31,13 @@ widget's core function should rest on.
 
 For scanning, screening, or any data the terminal does not already have open, connect to the
 venue yourself: list the hosts in your manifest's `egress` allowlist and open your own venue
-WebSockets. They work from a page context already, and for venue REST endpoints that ship no
-CORS headers the host fulfills the request for you, so CORS is not your problem either.
+WebSockets. They work from a page context already — and only to hosts on that list: the terminal
+serves your document with a `Content-Security-Policy: connect-src` built from it, so a socket to
+an undeclared host throws a `SecurityError` at construction (the terminal counts and logs the
+blocked host in its F12 report, which is where to look when a stream "silently" never opens). A
+host declared without a port covers any port; `ws.okx.com:8443` covers only 8443. For venue REST
+endpoints that ship no CORS headers the host fulfills the request for you, so CORS is not your
+problem either.
 
 What only the terminal has — and therefore what this SDK is really for — is your accounts:
 connections, positions, orders, balances, closed-trade history, trading through your keys, plus
@@ -169,7 +174,10 @@ on every save and the terminal picks it up. Make sure your `widget.json` is copi
 If you would rather use HMR, you can: set `entry` to `http://localhost:5173` and the terminal
 loads your dev server directly. That form is accepted **only** for an unpacked widget, and only
 for literal `localhost` / `127.0.0.1` — it is a development affordance, not a distributable
-manifest.
+manifest. The same `connect-src` applies to a dev-served page, with your dev origin spelled out as
+`'self'` including its port — so Vite's HMR socket on the entry's own port just works, while an
+HMR socket moved to a different port (`server.hmr.port`) would be refused; keep it on the entry's
+port.
 
 `DevTools` on the widget's row (or in the widget's ⚙ menu) opens Chromium DevTools against your
 page: console, network, elements, the usual. For an installed widget the affordance is off unless

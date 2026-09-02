@@ -33,7 +33,7 @@ These are not settings — they are construction. No manifest permission lifts t
 
 | Boundary | What exactly | Why |
 | --- | --- | --- |
-| Network is declared-only | A page request goes only to your own origin and the hosts in `egress`; everything else is refused. Declare EVERY host, exchange WebSocket hosts included | At install the user sees where the widget can send data. The list is a promise, and the terminal enforces it |
+| Network is declared-only | A page request goes only to your own origin and the hosts in `egress`; everything else is refused. Declare EVERY host, exchange WebSocket hosts included. Two mechanisms, one list: `fetch`/XHR/images/scripts/frames are refused by the terminal (a synthetic 403), and WebSockets by the browser itself — your document is served with a `Content-Security-Policy: connect-src` built from `'self'` plus every `egress` host as `https://` + `wss://`, so an undeclared `new WebSocket(...)` throws a `SecurityError` at construction. A host declared without a port matches any port; one declared with a port (`ws.okx.com:8443`) matches only that port | At install the user sees where the widget can send data. The list is a promise, and the terminal enforces it |
 | `127.0.0.1` is unreachable | Loopback and IP literals cannot go into `egress`, and the page cannot reach them. That covers both the terminal's own Local API and any local program. This is a final decision, not a temporary limitation — see pattern 4 below | The Local API is the door for native programs with a different trust model; a widget doesn't need it — the `window.colibri` bridge does more, with no port and no token |
 | No files, no processes | No filesystem, OS, or other-process access. Storage is `colibri.storage`, a 5 MB key-value store per widget | A widget must be exactly as safe as its consent claims — and a consent cannot honestly describe "access to the whole computer" |
 | Nothing runs while the terminal is closed | A widget lives as long as the terminal does. There are no background services | A widget is part of the terminal, not a separate program |
@@ -51,9 +51,10 @@ everything else.
 
 ### 1 · Everything in the page (bundled)
 
-Data — your own exchange WebSockets + `colibri.net.fetch` (see the README's market-data section);
-terminal things — the bridge; compute — JS or WASM. Both reference widgets in `examples/` are
-built this way.
+Data — your own exchange WebSockets (to hosts in `egress` — the document's CSP enforces the same
+list, so an undeclared socket fails with a `SecurityError`, not a network error) +
+`colibri.net.fetch` (see the README's market-data section); terminal things — the bridge;
+compute — JS or WASM. Both reference widgets in `examples/` are built this way.
 
 **Take this pattern by default.** It is the only one that gives the full set: the Nest catalog,
 consent, revocation, a pinned content hash, theming, one-click install — and not a single

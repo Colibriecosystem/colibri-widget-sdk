@@ -238,9 +238,13 @@ export const storage = {
  * `egress` and the user granted at consent.
  *
  * Market data is widget-owned: you bring your own venue connections. Venue WebSockets work from
- * the page directly, but venue REST often does not — many venues send no CORS headers at all
- * (KuCoin and Kraken Futures among them), and no amount of page-side code can get around that.
- * `net.fetch` is the way through: the host makes the call, so CORS never enters into it.
+ * the page directly — to hosts in `egress` only: the terminal serves your document with a
+ * `Content-Security-Policy: connect-src` built from that list, so `new WebSocket(...)` to an
+ * undeclared host throws a `SecurityError` at construction (a host declared without a port covers
+ * any port; `ws.okx.com:8443` covers only 8443). Venue REST often does not work from the page —
+ * many venues send no CORS headers at all (KuCoin and Kraken Futures among them), and no amount of
+ * page-side code can get around that. `net.fetch` is the way through: the host makes the call, so
+ * CORS never enters into it.
  *
  * Rules worth knowing before you debug a refusal: https only; GET and POST only; the URL's host
  * must be covered by a declared-AND-granted `egress` entry (`code: "egress_denied"` otherwise);

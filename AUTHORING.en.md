@@ -54,7 +54,8 @@ a slot-only widget lives in panels exclusively.
 
 One mode exists only here: `entry` may point at a dev server (`http://localhost:5173/`) — that is
 how Vite HMR works. An ordinary install refuses such a manifest; the allowance is deliberate and
-scoped to the unpacked mode.
+scoped to the unpacked mode. Keep the HMR socket on the entry's own port: the page's
+`connect-src` names your dev origin with that port, and nothing else on loopback.
 
 Every reload in this mode **re-pins** the content hash: you change the code, the terminal accepts
 the new version as yours. That is the difference from Prod mode, where a changed byte is a reason
