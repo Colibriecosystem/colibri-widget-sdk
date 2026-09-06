@@ -40,6 +40,15 @@ export interface Handshake {
   /** This surface's instance id — also the namespace your `storage` keys live in. */
   instanceId: string;
   surface: WidgetSurface;
+  /**
+   * The durable id of the SLOT hosting this widget, or `null` when `surface` is `"window"`.
+   * Pass it to `panels.get()` (or call `panels.self()`) to find where you sit and what is beside
+   * you — no user setup, nothing to paste.
+   *
+   * Updated in place BEFORE the `surface` event fires, exactly like `surface`: a widget can be
+   * moved between boxes, and between a box and a window, without being restarted.
+   */
+  slotId: string | null;
   /** `dark` | `light`; also delivered on the `theme` event when it changes. */
   theme: string;
   /** UI language tag (`en`, `ru`, …). */
@@ -98,6 +107,9 @@ export declare const connections: {
 
 export declare const panels: {
   list(params?: RequestOptions["params"]): Promise<unknown>;
+  get(slotId: string): Promise<unknown>;
+  /** This widget's own box + its position. Rejects with code `no_slot` when in a window. */
+  self(): Promise<unknown>;
   add(body: unknown): Promise<unknown>;
   set(slotId: string, body: unknown): Promise<unknown>;
   clear(slotId: string): Promise<unknown>;
