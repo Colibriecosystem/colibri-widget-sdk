@@ -84,7 +84,10 @@ const venues = await markets.exchanges();
 const book = await markets.book("BinanceSpot", "BTCUSDT", { depth: 20 });
 
 // Действуем в терминале.
-await panels.add({ content: { exchange: "BinanceSpot", symbol: "ETHUSDT", views: ["orderbook"] }, activate: true });
+await panels.add({ content: { kind: "orderbook", exchange: "BinanceSpot", symbol: "ETHUSDT" }, activate: true });
+// Где я и что рядом со мной? Без настройки руками — терминал сам сообщает виджету его слот.
+const { siblings, index } = await panels.siblings();
+const bookNextToMe = siblings.find((s) => s.type === "slot" && s.content.kind === "orderbook");
 await notifications.raise({ message: "Спред разошёлся больше 4 б.п.", severity: "warning" });
 
 // Живые данные. Возвращает функцию отписки; сама переподписывается, если мост переключили.
@@ -143,6 +146,14 @@ try {
 Объявите минимально нужную версию в `widget.json` как `minApiVersion` — терминал откажется
 запускать виджет, которому нужен более новый API, вместо того чтобы упасть на середине первого
 вызова. Мажор этого пакета следует за `apiVersion`.
+
+**Формы ответов** версионируются отдельно, на каждый запрос: каждый вызов этого SDK несёт
+`API_VERSION` (2) — терминал читает его из конверта моста, а по обычному HTTP это заголовок
+`api-version`. Сегодня две формы есть только у `/app/panels` (v2 — одно дискриминированное дерево
+`layout` на вкладку; старый плоский `slots` + `tree` — это v1, её получает запрос без версии).
+Терминал старше v2 игнорирует поле и отвечает v1, поэтому этому SDK нужен терминал, который
+отдаёт v2 — проверьте `supportedApiVersions` в `GET /ping`. **С терминала 1.3.0 v1 удаляется, а
+заголовок игнорируется**; для клиента, уже сидящего на v2, ничего не меняется.
 
 ## Как писать виджет
 

@@ -68,6 +68,133 @@ export interface RequestOptions {
   params?: Record<string, string | number | boolean | null | undefined>;
   /** JSON body for POST / PUT / PATCH. */
   body?: unknown;
+  /** Response-shape version to ask for; defaults to {@link API_VERSION}. */
+  apiVersion?: number;
+}
+
+/** The response-shape version this SDK reads (sent on every call). Needs a terminal that serves it. */
+export declare const API_VERSION: number;
+
+// ── /app/panels (api-version 2) ──────────────────────────────────────────────
+
+/** A split: children laid out side by side (`row`) or stacked (`column`). */
+export interface SplitNode {
+  type: "split";
+  orientation: "row" | "column";
+  /** This node's fraction of its parent; absent on the tab root. */
+  share?: number;
+  children: LayoutNode[];
+}
+
+/** A slot — the durable box (`id` is the handle `panels.set/clear/remove` take) with what fills it. */
+export interface SlotNode {
+  type: "slot";
+  id: string;
+  /** This node's fraction of its parent; absent on a root slot and on action responses. */
+  share?: number;
+  content: SlotContent;
+}
+
+export type LayoutNode = SplitNode | SlotNode;
+
+export interface EmptyContent {
+  kind: "empty";
+}
+
+export interface OrderbookContent {
+  kind: "orderbook";
+  exchange: string;
+  symbol: string;
+  /** The per-instrument panel id — changes on a re-pick, unlike the slot `id`. */
+  contentId: string;
+  /** Present only when a trading account is bound. */
+  connectionId?: string;
+  viewOnly: boolean;
+}
+
+export interface ChartContent {
+  kind: "chart";
+  exchange: string;
+  symbol: string;
+  interval: string;
+  contentId: string;
+}
+
+export interface WidgetContent {
+  kind: "widget";
+  widgetId: string;
+  /** The widget instance id — the SAME value that widget's `handshake().instanceId` carries. */
+  contentId: string;
+  name: string;
+  /** False for the not-installed / revoked placeholder that still holds the box. */
+  installed: boolean;
+}
+
+/** What a slot holds — discriminated on `kind`; a field exists only when it means something for that kind. */
+export type SlotContent = EmptyContent | OrderbookContent | ChartContent | WidgetContent;
+
+export interface PanelTab {
+  /** The durable tab id — the `tabId` an add targets. */
+  id: string;
+  index: number;
+  /** Whether this is the tab its window shows. */
+  active: boolean;
+  /** The header label as rendered. */
+  title: string;
+  /** The whole layout tree; a single-box tab has a `SlotNode` root. Null for a never-laid-out tab. */
+  layout: LayoutNode | null;
+}
+
+export interface PanelWindow {
+  /** Positional — the main window is 0. */
+  index: number;
+  active: boolean;
+  tabs: PanelTab[];
+}
+
+export interface PanelsResponse {
+  windows: PanelWindow[];
+}
+
+export interface SlotPosition {
+  window: number;
+  tab: string;
+  /** The index chain from the tab root. Empty for a root slot. */
+  path: number[];
+  depth: number;
+  /** The parent split; absent for a root slot (a single-box tab). */
+  parent?: { orientation: "row" | "column"; index: number; count: number };
+}
+
+/** `GET /app/panels/{id}` — the slot exactly as its leaf in the tree, plus where it sits. */
+export interface SlotLookup {
+  slot: SlotNode;
+  position: SlotPosition;
+}
+
+/** Result of an add / set / clear / remove: the affected box(es) in the tree's own leaf shape. */
+export interface SlotAction {
+  status: string;
+  slot?: SlotNode;
+  /** Every box a stack add created, in request order. */
+  slots?: SlotNode[];
+}
+
+/** One content to place — the read side's union minus the ids the terminal mints. A widget is never placed through the API. */
+export type PlaceableContent =
+  | { kind: "orderbook"; exchange: string; symbol: string; connectionId?: string; share?: number }
+  | { kind: "chart"; exchange: string; symbol: string; interval?: string; share?: number };
+
+export interface AddPanelsBody {
+  /** Target tab; the active tab when omitted. */
+  tabId?: string;
+  /** Where the stack lands; omitted = appended to the tab's root row. */
+  target?: { slotId: string; side?: "left" | "right" | "top" | "bottom"; action?: "pair" | "row" | "column" | "intoRow" };
+  /** How the items stack relative to each other. */
+  orientation?: "row" | "column";
+  contents?: PlaceableContent[];
+  /** Surface the terminal window afterwards. */
+  activate?: boolean;
 }
 
 /** `[method, path, requiresToken, scope]` — the terminal's route table, test-pinned. */
@@ -106,14 +233,23 @@ export declare const connections: {
 };
 
 export declare const panels: {
-  list(params?: RequestOptions["params"]): Promise<unknown>;
-  get(slotId: string): Promise<unknown>;
+  /** The workspace: every window → tab → its layout tree. `tabId` / `windowIndex` scope it. */
+  list(params?: { tabId?: string; windowIndex?: number }): Promise<PanelsResponse>;
+  /** One slot and where it sits. */
+  get(slotId: string): Promise<SlotLookup>;
   /** This widget's own box + its position. Rejects with code `no_slot` when in a window. */
-  self(): Promise<unknown>;
-  add(body: unknown): Promise<unknown>;
-  set(slotId: string, body: unknown): Promise<unknown>;
-  clear(slotId: string): Promise<unknown>;
-  remove(slotId: string): Promise<unknown>;
+  self(): Promise<SlotLookup>;
+  /**
+   * The boxes sharing a parent split with `slotId` (this widget's own box when omitted), in
+   * on-screen order — "the orderbook next to me" is the nearest `content.kind === "orderbook"`
+   * walking outward from `index`. A root slot has no siblings.
+   */
+  siblings(slotId?: string): Promise<{ orientation: "row" | "column" | null; index: number; siblings: LayoutNode[] }>;
+  add(body: AddPanelsBody): Promise<SlotAction>;
+  /** Set what one box holds: `{ content: PlaceableContent }`; `{ content: { kind: "empty" } }` clears. */
+  set(slotId: string, body: { content: PlaceableContent | { kind: "empty" }; connectionId?: string }): Promise<SlotAction>;
+  clear(slotId: string): Promise<SlotAction>;
+  remove(slotId: string): Promise<SlotAction>;
   combo(body: unknown): Promise<unknown>;
 };
 
@@ -191,7 +327,7 @@ export interface ColibriBridge {
   readonly theme: string;
   readonly lang: string;
   readonly grantedScopes: Scope[];
-  request(method: string, path: string, opts?: { query?: string; body?: unknown }): Promise<{ status: number; body: unknown }>;
+  request(method: string, path: string, opts?: { query?: string; body?: unknown; apiVersion?: number }): Promise<{ status: number; body: unknown }>;
   storage: {
     get(key: string): Promise<{ ok: boolean; value: string | null; code?: string }>;
     set(key: string, value: string): Promise<{ ok: boolean; code?: string }>;
