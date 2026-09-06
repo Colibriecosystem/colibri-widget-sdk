@@ -58,6 +58,7 @@ export const ROUTES = [
   ["DELETE", "/orders", true, "trading"],
   ["DELETE", "/positions", true, "trading"],
   ["GET", "/app/panels", false, "panels"],
+  ["GET", "/app/panels/{id}", false, "panels"],
   ["POST", "/app/panels", false, "panels"],
   ["PUT", "/app/panels/{id}", false, "panels"],
   ["DELETE", "/app/panels/{id}", false, "panels"],
@@ -182,6 +183,23 @@ export const connections = {
 /** Terminal panels: enumerate slots, open an instrument, change or clear a slot. */
 export const panels = {
   list: (params) => request("GET", "/app/panels", { params }),
+  get: (slotId) => request("GET", `/app/panels/${encodeURIComponent(slotId)}`),
+  /**
+   * This widget's OWN box, with where it sits — the path from its tab's root, its parent split's
+   * axis and its index among its siblings. Use it to find your neighbours (the orderbook beside
+   * you, say) instead of asking the user to paste a panel id.
+   *
+   * Rejects when the widget is in its own WINDOW rather than a slot: a window is not in the grid,
+   * so there is nothing to be beside. Read `handshake().slotId` if you want to test that yourself,
+   * and listen to the `surface` event — a widget can be moved between boxes, and between a box and
+   * a window, without being restarted.
+   */
+  self: () => {
+    const slotId = bridge().handshake.slotId;
+    return slotId
+      ? panels.get(slotId)
+      : Promise.reject(new ColibriError(400, "no_slot", "This widget is not in a slot (surface: window)."));
+  },
   add: (body) => request("POST", "/app/panels", { body }),
   set: (slotId, body) => request("PUT", `/app/panels/${encodeURIComponent(slotId)}`, { body }),
   clear: (slotId) => request("PUT", `/app/panels/${encodeURIComponent(slotId)}`, { body: {} }),
