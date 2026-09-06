@@ -122,13 +122,27 @@ function query(params) {
 }
 
 /**
+ * The response-shape version this SDK is written against, sent on EVERY call (the terminal
+ * reads it from the bridge envelope; over HTTP it is the `api-version` header). Today only the
+ * `/app/panels` family has two shapes; every other route ignores it. A terminal older than the
+ * one that introduced v2 ignores the field and answers v1 — so this SDK needs a terminal that
+ * serves v2 (check `supportedApiVersions` on `GET /ping`, or `handshake().apiVersion`).
+ * From terminal 1.3.0 the header is ignored and v2 is the only shape.
+ */
+export const API_VERSION = 2;
+
+/**
  * One raw call. Resolves with the response body on 2xx and REJECTS with a `ColibriError`
  * otherwise — so `await` reads naturally and a forgotten error check cannot silently pass a
  * failure off as data.
  */
 export async function request(method, path, options) {
   const opts = options || {};
-  const response = await bridge().request(method, path, { query: query(opts.params), body: opts.body });
+  const response = await bridge().request(method, path, {
+    query: query(opts.params),
+    body: opts.body,
+    apiVersion: opts.apiVersion === undefined ? API_VERSION : opts.apiVersion,
+  });
   if (response.status >= 200 && response.status < 300) {
     return response.body;
   }
@@ -180,7 +194,15 @@ export const connections = {
     request("GET", `/connections/${encodeURIComponent(id)}/trades/${encodeURIComponent(tradeId)}`),
 };
 
-/** Terminal panels: enumerate slots, open an instrument, change or clear a slot. */
+/**
+ * Terminal panels — the workspace as ONE layout tree per tab (api-version 2): a node is
+ * `{type:"split", orientation:"row"|"column", share?, children}` or
+ * `{type:"slot", id, share?, content}`, and `content` is a union on `kind`
+ * (`orderbook` | `chart` | `widget` | `empty`) carrying only the fields that mean something for
+ * that kind. `content.contentId` is the UNIFORM identity of what fills a box — for a widget it is
+ * the same value as `handshake().instanceId`, so a widget can find ITSELF in the tree by one
+ * field name whatever kind it is looking at.
+ */
 export const panels = {
   list: (params) => request("GET", "/app/panels", { params }),
   get: (slotId) => request("GET", `/app/panels/${encodeURIComponent(slotId)}`),
@@ -199,6 +221,26 @@ export const panels = {
     return slotId
       ? panels.get(slotId)
       : Promise.reject(new ColibriError(400, "no_slot", "This widget is not in a slot (surface: window)."));
+  },
+  /**
+   * The boxes that share a parent split with `slotId` (this widget's own box when omitted), in
+   * on-screen order, plus the split's axis and this box's index in it. This is "the orderbook
+   * next to me": walk `siblings` from `index` outward and take the first `content.kind ===
+   * "orderbook"`. A root slot (a single-box tab) has no siblings and answers an empty list.
+   */
+  siblings: async (slotId) => {
+    const self = await (slotId ? panels.get(slotId) : panels.self());
+    const position = self.position;
+    if (!position.parent) {
+      return { orientation: null, index: 0, siblings: [] };
+    }
+    const tree = await panels.list({ tabId: position.tab });
+    let node = tree.windows[0].tabs[0].layout;
+    const parentPath = position.path.slice(0, -1);
+    for (let i = 0; i < parentPath.length; i++) {
+      node = node.children[parentPath[i]];
+    }
+    return { orientation: position.parent.orientation, index: position.parent.index, siblings: node.children };
   },
   add: (body) => request("POST", "/app/panels", { body }),
   set: (slotId, body) => request("PUT", `/app/panels/${encodeURIComponent(slotId)}`, { body }),

@@ -68,7 +68,10 @@ const venues = await markets.exchanges();
 const book = await markets.book("BinanceSpot", "BTCUSDT", { depth: 20 });
 
 // Act on the terminal.
-await panels.add({ content: { exchange: "BinanceSpot", symbol: "ETHUSDT", views: ["orderbook"] }, activate: true });
+await panels.add({ content: { kind: "orderbook", exchange: "BinanceSpot", symbol: "ETHUSDT" }, activate: true });
+// Where am I, and what is beside me? No user setup — the terminal tells a widget its own slot.
+const { siblings, index } = await panels.siblings();
+const bookNextToMe = siblings.find((s) => s.type === "slot" && s.content.kind === "orderbook");
 await notifications.raise({ message: "Spread widened past 4 bps", severity: "warning" });
 
 // Live data. Returns an unsubscribe function; re-subscribes itself if the bridge is toggled.
@@ -125,6 +128,14 @@ looks native with zero code.
 the minimum you need in your `widget.json` as `minApiVersion` — the terminal refuses to start a
 widget that needs a newer API rather than failing halfway through its first call. This package's
 semver major tracks `apiVersion`.
+
+**Response shapes** are versioned separately, per request: every call this SDK makes carries
+`API_VERSION` (2) — the terminal reads it from the bridge envelope, and over plain HTTP it is the
+`api-version` header. Today only `/app/panels` has two shapes (v2 = one discriminated `layout` tree
+per tab; the older flat `slots` + `tree` is v1, what an unversioned request gets). A terminal that
+predates v2 ignores the field and answers v1, so this SDK needs a terminal that serves v2 — check
+`supportedApiVersions` on `GET /ping`. **From terminal 1.3.0 v1 is removed and the header is
+ignored**; nothing changes for a client already on v2.
 
 ## Building a widget
 
