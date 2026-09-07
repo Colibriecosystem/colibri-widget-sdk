@@ -134,7 +134,7 @@ semver major tracks `apiVersion`.
 `api-version` header. Today only `/app/panels` has two shapes (v2 = one discriminated `layout` tree
 per tab; the older flat `slots` + `tree` is v1, what an unversioned request gets). A terminal that
 predates v2 ignores the field and answers v1, so this SDK needs a terminal that serves v2 — check
-`supportedApiVersions` on `GET /ping`. **From terminal 1.3.0 v1 is removed and the header is
+`supportedApiVersions` on `GET /ping`. **From terminal 1.4.0 v1 is removed and the header is
 ignored**; nothing changes for a client already on v2.
 
 ## Building a widget
