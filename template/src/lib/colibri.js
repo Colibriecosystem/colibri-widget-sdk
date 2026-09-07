@@ -127,7 +127,7 @@ function query(params) {
  * `/app/panels` family has two shapes; every other route ignores it. A terminal older than the
  * one that introduced v2 ignores the field and answers v1 — so this SDK needs a terminal that
  * serves v2 (check `supportedApiVersions` on `GET /ping`, or `handshake().apiVersion`).
- * From terminal 1.3.0 the header is ignored and v2 is the only shape.
+ * From terminal 1.4.0 the header is ignored and v2 is the only shape.
  */
 export const API_VERSION = 2;
 
