@@ -14,6 +14,34 @@ cards; this page is the long version of each.
 
 ---
 
+## First, the fork: hosted or bundled
+
+If you **already have a working web app on your own https domain**, take hosted. `entry` points at
+your URL, the folder is a single `widget.json`, there is nothing to build and nothing to pack, and
+you ship updates from your own server without republishing the widget. Authors who already have a
+site still tend to build a bundle anyway — that is extra work which, in their case, buys almost
+nothing.
+
+| | Hosted (`entry` is your https URL) | Bundled (`entry` is a file in the folder) |
+| --- | --- | --- |
+| What it takes | a working site | a build and a zip |
+| Updates | you ship them on your server | a new version and a new submission |
+| Nest catalog, consent, revocation, theming, one-click install | yes | yes |
+| Catalog badge | amber `hosted` | green `bundled · hash ✓` |
+| Works without your server | no | yes |
+| Moderation | always by hand: hosted never auto-approves | a trusted publisher's updates can auto-approve |
+
+**Do not wrap your site in a bundle.** A bundle whose entire entry document is an `<iframe>` of
+your site is hosted wearing bundled clothes: the registry detects it with its own check (`embed`),
+the card still gets the amber badge naming the embedded site, and if such a widget asks for
+`trading` or `account:read` the submission is **refused automatically**. The green badge is earned
+only by code that actually ships in the archive — the hash covers what arrived in the zip, not what
+your server will serve tomorrow.
+
+The architectural side of the choice is in [CAPABILITIES.en.md](CAPABILITIES.en.md), "How to pick
+an architecture".
+---
+
 ## Stage 1 · Development
 
 **Load unpacked…** serves your folder **in place** — nothing is copied. DevTools are always
@@ -45,12 +73,21 @@ my-widget/
 DNS label (`a–z`, `0–9`, hyphens). `entry` is a path inside the folder. A full starter project
 (TS + React, no framework lock-in) lives in [`template/`](template/).
 
-The optional `icon` field is an image path inside the bundle (PNG, up to 512 KB): the terminal
-renders it everywhere the widget is visible — the catalog card and listing, the My-widgets list,
-the Notifications window Widgets tab, the bottom-strip bookmark, the panel and window headers,
-the 🧩 menu. Without one, the 🧩 glyph shows everywhere. And on `surfaces`: only a widget that
-declares `"window"` can be opened as a standalone window and pinned to the bottom bookmark strip —
-a slot-only widget lives in panels exclusively.
+The optional `icon` field is an image path **inside the bundle** (a URL is not accepted): the
+terminal renders it everywhere the widget is visible — the catalog card and listing, the
+My-widgets list, the Notifications window Widgets tab, the bottom-strip bookmark, the panel and
+window headers, the 🧩 menu. Without one, the 🧩 glyph shows everywhere.
+
+- **Format** — PNG (JPEG and WEBP are read too); **SVG is not supported**.
+- **File size** — up to 512 KB.
+- **Image size** — 128×128, square, transparent background: the largest the icon is ever drawn is
+  44×44 in the listing header, and 22–26 px in lists.
+- **Failures are silent.** A wrong path, a file over the cap, a format that cannot be decoded —
+  each simply leaves the 🧩 glyph, with no message anywhere. If the icon "did not show up", check
+  the path and the file size first.
+
+And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
+pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
 
 One mode exists only here: `entry` may point at a dev server (`http://localhost:5173/`) — that is
 how Vite HMR works. An ordinary install refuses such a manifest; the allowance is deliberate and
@@ -115,6 +152,21 @@ becomes exactly this manifest:
 The honest difference of hosted mode: identity here is the **origin, not a content hash**.
 Whatever that URL serves tomorrow is what runs — which is why the card wears the amber `hosted`
 chip instead of the green `bundled · hash ✓`.
+
+**A hosted widget's logo, and publishing one.** The URL form mints a one-file `widget.json` and has
+no `icon` field: such a widget keeps the 🧩 glyph everywhere, and it never grows a "Pack for Nest"
+button — that button belongs to an unpacked (dev) widget only. So if your hosted widget wants its
+own logo or a place in the catalog, build the folder by hand — it is two files:
+
+```
+my-widget/
+├─ widget.json   ← entry: "https://your-domain/app/"
+└─ icon.png
+```
+
+and load it with **Load unpacked…**. From there it is like any other widget: "Pack for Nest" →
+"Listed". Only the manifest and the icon travel in the archive — the code stays on your server, and
+the hash covers exactly those two files.
 
 ---
 
