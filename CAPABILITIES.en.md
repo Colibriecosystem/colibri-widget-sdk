@@ -56,9 +56,10 @@ list, so an undeclared socket fails with a `SecurityError`, not a network error)
 `colibri.net.fetch` (see the README's market-data section); terminal things — the bridge;
 compute — JS or WASM. Both reference widgets in `examples/` are built this way.
 
-**Take this pattern by default.** It is the only one that gives the full set: the Nest catalog,
-consent, revocation, a pinned content hash, theming, one-click install — and not a single
-dependency the user installs separately.
+**Take this pattern if you do not already have a site.** It gives what no other one does: a pinned
+content hash (the green `bundled · hash ✓` badge), operation without your server, and not a single
+dependency the user installs separately. The Nest catalog, consent, revocation, theming and
+one-click install are hosted's too — that is not where bundled differs.
 
 ### 2 · Hosted: a page from your server
 
@@ -66,6 +67,12 @@ dependency the user installs separately.
 included. The honest price: identity is the origin, not a content hash (the amber `hosted`
 badge), and user data flows through your server — the consent shows that. Fits SaaS tools that
 already have a server.
+
+**If your web app already works, this is the shortest path:** a folder holding a single
+`widget.json`, no build and no packing, and you ship updates on your own server without
+republishing the widget. Wrapping your own site in a bundle to earn the green badge is neither
+needed nor possible — see [AUTHORING.en.md](AUTHORING.en.md), "First, the fork: hosted or
+bundled".
 
 ### 3 · A native program + the Local API (no widget at all)
 

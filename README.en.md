@@ -142,6 +142,10 @@ ignored**; nothing changes for a client already on v2.
 A widget is a folder holding a `widget.json` and whatever your build produces. There is no SDK
 install step and no toolchain the terminal cares about — if it emits HTML, it can be a widget.
 
+If your app **already works at its own https address**, the folder can be a single `widget.json`
+whose `entry` is that address: that is a hosted widget, and it needs neither a build nor a pack.
+The hosted-or-bundled fork is laid out in [AUTHORING.en.md](AUTHORING.en.md).
+
 ```json
 {
   "id": "my-widget",
@@ -160,12 +164,21 @@ install step and no toolchain the terminal cares about — if it emits HTML, it 
 asked to consent to — declare only what you use, since a manifest that grows a permission asks
 again.
 
-The optional `icon` field is an image path inside the bundle (PNG, up to 512 KB): the terminal
-renders it everywhere the widget is visible — the catalog card and listing, the My-widgets list,
-the Notifications window Widgets tab, the bottom-strip bookmark, the panel and window headers,
-the 🧩 menu. Without one, the 🧩 glyph shows everywhere. And on `surfaces`: only a widget that
-declares `"window"` can be opened as a standalone window and pinned to the bottom bookmark strip —
-a slot-only widget lives in panels exclusively.
+The optional `icon` field is an image path **inside the bundle** (a URL is not accepted): the
+terminal renders it everywhere the widget is visible — the catalog card and listing, the
+My-widgets list, the Notifications window Widgets tab, the bottom-strip bookmark, the panel and
+window headers, the 🧩 menu. Without one, the 🧩 glyph shows everywhere.
+
+- **Format** — PNG (JPEG and WEBP are read too); **SVG is not supported**.
+- **File size** — up to 512 KB.
+- **Image size** — 128×128, square, transparent background: the largest the icon is ever drawn is
+  44×44 in the listing header, and 22–26 px in lists.
+- **Failures are silent.** A wrong path, a file over the cap, a format that cannot be decoded —
+  each simply leaves the 🧩 glyph, with no message anywhere. If the icon "did not show up", check
+  the path and the file size first.
+
+And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
+pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
 
 Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
 that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep
