@@ -63,6 +63,21 @@ export const ROUTES = [
   ["PUT", "/app/panels/{id}", false, "panels"],
   ["DELETE", "/app/panels/{id}", false, "panels"],
   ["POST", "/app/combos", false, "panels"],
+  ["GET", "/app/workspace", false, "panels"],
+  ["GET", "/app/windows", false, "panels"],
+  ["PATCH", "/app/windows/{windowId}", false, "panels"],
+  ["POST", "/app/tabs", false, "panels"],
+  ["GET", "/app/tabs/{tabId}", false, "panels"],
+  ["PATCH", "/app/tabs/{tabId}", false, "panels"],
+  ["DELETE", "/app/tabs/{tabId}", false, "panels"],
+  ["GET", "/app/chart-windows", false, "panels"],
+  ["POST", "/app/chart-windows", false, "panels"],
+  ["PATCH", "/app/chart-windows/{chartWindowId}", false, "panels"],
+  ["DELETE", "/app/chart-windows/{chartWindowId}", false, "panels"],
+  ["POST", "/app/slots", false, "panels"],
+  ["GET", "/app/slots/{slotId}", false, "panels"],
+  ["PUT", "/app/slots/{slotId}", false, "panels"],
+  ["DELETE", "/app/slots/{slotId}", false, "panels"],
   ["POST", "/notifications", false, "notifications"],
   ["POST", "/signals", false, "notifications"],
   ["GET", "/signal-levels", false, "signalLevels"],
@@ -249,6 +264,119 @@ export const panels = {
   combo: (body) => request("POST", "/app/combos", { body }),
 };
 
+/**
+ * The workspace: the CONTAINERS panels live in — windows and tabs.
+ *
+ * `panels` above describes the boxes inside one tab and is deprecated with the rest of
+ * `/app/panels` at 1.4.0. This is what replaces it, and it reports two things that surface never
+ * could: a window's durable id, and the chart windows a tab owns (a standalone chart, or the 3-pane
+ * combo chart) which float beside the grid rather than sitting in it.
+ *
+ * Ids here are DURABLE. A window's positional index shifts the moment another window closes, so it
+ * is not an identity and must not be stored as one.
+ */
+export const workspace = {
+  /** Every window, its tabs, each tab's layout tree and the chart windows it owns. */
+  get: (params) => request("GET", "/app/workspace", { params }),
+
+  /** The windows alone, without any tab payload. */
+  windows: () => request("GET", "/app/windows"),
+
+  /** Raise a window to the front. Only `true` is meaningful — "unfocus" names no destination. */
+  activateWindow: (windowId) =>
+    request("PATCH", `/app/windows/${encodeURIComponent(windowId)}`, { body: { active: true } }),
+
+  /** One tab, byte-identical to its node in `get()`. */
+  tab: (tabId) => request("GET", `/app/tabs/${encodeURIComponent(tabId)}`),
+
+  /** Create a tab. `activate` defaults to false so a background tool never steals the user's focus. */
+  createTab: (body) => request("POST", "/app/tabs", { body }),
+
+  /**
+   * Activate, rename or reorder. Fields apply title → index → active, so one call can do all three.
+   *
+   * `title` is PATCH-shaped: omit it to leave the name alone, send a string to rename, send `null`
+   * to clear it back to the automatic coin + count label. Do NOT read a tab and write its `title`
+   * back unchanged — that freezes the automatic label, count suffix and all, as a permanent name.
+   */
+  updateTab: (tabId, body) => request("PATCH", `/app/tabs/${encodeURIComponent(tabId)}`, { body }),
+
+  /** Bring a tab to the front. Raises its window too unless `raiseWindow: false`. */
+  activateTab: (tabId, raiseWindow = true) =>
+    request("PATCH", `/app/tabs/${encodeURIComponent(tabId)}`, { body: { active: true, raiseWindow } }),
+
+  /**
+   * Close a tab, its slots, their feeds and its chart windows — what the tab's own close button
+   * does. Rejects `409 last_tab` for the MAIN window's only tab: the terminal has no zero-tab state.
+   */
+  closeTab: (tabId) => request("DELETE", `/app/tabs/${encodeURIComponent(tabId)}`),
+
+  /**
+   * ADD boxes. This never replaces one: the box named in `target` is an ANCHOR that survives the
+   * call with its id, content and live feed intact — it only gets smaller, because the new boxes
+   * take room from somewhere.
+   *
+   * `target` is `{slot, side}` or `{edge}`, never both. There is deliberately no "mode": how the
+   * room is found next to an anchor is decided by the side and the two content KINDS, through the
+   * same table a drag-and-drop goes through.
+   */
+  addSlots: (body) => request("POST", "/app/slots", { body }),
+
+  /** One box and where it sits — its window, tab, path from the tab root, and its parent split. */
+  slot: (slotId) => request("GET", `/app/slots/${encodeURIComponent(slotId)}`),
+
+  /**
+   * Set what THIS box holds. Idempotent, and a kind transition (orderbook to chart, or back) keeps
+   * the same slot id. A chart docked beside it is its own box with its own id and is left alone.
+   *
+   * Refused `409 slot_occupied_by_widget` on a box holding a running widget — a clear included.
+   */
+  setSlot: (slotId, content) => request("PUT", `/app/slots/${encodeURIComponent(slotId)}`, { body: { content } }),
+
+  /** Clear a box, keeping it and its id so it can be filled again later. */
+  clearSlot: (slotId) =>
+    request("PUT", `/app/slots/${encodeURIComponent(slotId)}`, { body: { content: { kind: "empty" } } }),
+
+  /** Remove a box. Structural: the box is gone and its id retired. */
+  removeSlot: (slotId) => request("DELETE", `/app/slots/${encodeURIComponent(slotId)}`),
+
+  /**
+   * The floating chart windows, across every tab, each with the `tabId` that owns it. Scope with
+   * `{tabId}` or `{kind}`.
+   *
+   * These are NOT in a tab's layout tree — a tab owns them, they float, and they survive a restart.
+   */
+  chartWindows: (params) => request("GET", "/app/chart-windows", { params }),
+
+  /**
+   * Open a coin's chart window (`kind: "chart"`) or its 3-pane, 3-timeframe combo chart
+   * (`kind: "comboChart"`).
+   *
+   * `interval` is chart-only and `intervals` (exactly three) is comboChart-only; each is REFUSED on
+   * the other kind rather than dropped, so a timeframe never disappears in silence.
+   *
+   * Dedupe is by `(kind, exchange, symbol)` — the terminal allows one of each per coin. Opening a
+   * pair that is already open re-homes the live window to `tabId` and shows it, answering 200 with
+   * that window instead of opening a second one; a genuinely new window answers 201.
+   */
+  openChartWindow: (body) => request("POST", "/app/chart-windows", { body }),
+
+  /**
+   * Retarget, re-interval, re-home to another tab, pin, lock, sync or raise one. Every field is
+   * optional; at least one is required.
+   *
+   * `sync` is comboChart-only and EXCLUSIVE across combo windows — turning it on turns it off
+   * everywhere else, because a click has to be addressed to exactly one window. The reply reports
+   * only the window you patched, so re-read the list if you track sync.
+   */
+  updateChartWindow: (chartWindowId, body) =>
+    request("PATCH", `/app/chart-windows/${encodeURIComponent(chartWindowId)}`, { body }),
+
+  /** Close one chart window by its durable id. */
+  closeChartWindow: (chartWindowId) =>
+    request("DELETE", `/app/chart-windows/${encodeURIComponent(chartWindowId)}`),
+};
+
 /** Raise a terminal notification (toast + the configured sound). */
 export const notifications = {
   raise: (body) => request("POST", "/notifications", { body }),
@@ -397,6 +525,7 @@ export function on(event, handler) {
 
 export default {
   ROUTES,
+  workspace,
   CHANNELS,
   CHANNEL_SCOPES,
   SCOPES,

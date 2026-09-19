@@ -197,6 +197,192 @@ export interface AddPanelsBody {
   activate?: boolean;
 }
 
+// ── the workspace surface (/app/workspace, /app/windows, /app/tabs, /app/slots, /app/chart-windows) ─
+
+/**
+ * A window rectangle. When `maximized` is true this is the last NON-maximized position — where the
+ * window un-maximizes to, not where it sits on screen. The two are meaningless apart.
+ */
+export interface Bounds {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+
+/** A docked box in the layout tree. Identical to `SlotNode` plus the explicit surface flag. */
+export interface WorkspaceSlotNode {
+  type: "slot";
+  surface: "slot";
+  id: string;
+  /** This node's fraction of its parent; absent on a root slot and on action responses. */
+  share?: number;
+  content: SlotContent;
+}
+
+export interface WorkspaceSplitNode {
+  type: "split";
+  orientation: "row" | "column";
+  share?: number;
+  children: WorkspaceNode[];
+}
+
+export type WorkspaceNode = WorkspaceSplitNode | WorkspaceSlotNode;
+
+/** A floating chart window — one symbol, one timeframe. */
+export interface SingleChartWindow {
+  kind: "chart";
+  surface: "window";
+  /** The durable window id — what `updateChartWindow` / `closeChartWindow` take. */
+  id: string;
+  /** Present on `chartWindows()`; absent when nested under its own tab, whose position says it. */
+  tabId?: string;
+  exchange: string;
+  symbol: string;
+  interval: string;
+  contentId: string;
+  bounds: Bounds;
+  pinned: boolean;
+  locked: boolean;
+}
+
+/** The combo chart window — one symbol across THREE timeframe panes, so no single `contentId`. */
+export interface ComboChartWindow {
+  kind: "comboChart";
+  surface: "window";
+  id: string;
+  tabId?: string;
+  exchange: string;
+  symbol: string;
+  /** Exactly three, pane order. */
+  intervals: string[];
+  bounds: Bounds;
+  pinned: boolean;
+  locked: boolean;
+  /** Follow-the-clicked-orderbook. EXCLUSIVE: true on at most one combo window at a time. */
+  sync: boolean;
+}
+
+export type ChartWindow = SingleChartWindow | ComboChartWindow;
+
+export interface WorkspaceTab {
+  /** The durable tab id. */
+  id: string;
+  index: number;
+  active: boolean;
+  /** The label the header actually renders — the user's name, else the coin + panel count, else "". */
+  title: string;
+  /** The docked tree; absent for a tab that has never been laid out. */
+  layout?: WorkspaceNode;
+  /** The floating chart windows this tab owns. Always present, empty when it owns none. */
+  windows: ChartWindow[];
+}
+
+export interface WorkspaceWindow {
+  /** The durable window id — survives a restart, unlike `index`. */
+  id: string;
+  /** Positional; the main window is 0. It SHIFTS when another window closes, so never store it. */
+  index: number;
+  kind: "main" | "book";
+  active: boolean;
+  bounds: Bounds;
+  locked: boolean;
+  tabs: WorkspaceTab[];
+}
+
+/** A window without its tab payload. */
+export interface WorkspaceWindowSummary {
+  id: string;
+  index: number;
+  kind: "main" | "book";
+  active: boolean;
+  bounds: Bounds;
+  locked: boolean;
+  tabCount: number;
+}
+
+export interface WorkspaceResponse {
+  windows: WorkspaceWindow[];
+}
+
+export interface WorkspaceTabLookup {
+  tab: WorkspaceTab;
+  position: { windowId: string; windowIndex: number; tabCount: number };
+}
+
+export interface WorkspaceSlotLookup {
+  slot: WorkspaceSlotNode;
+  position: {
+    windowId: string;
+    tabId: string;
+    /** The index chain from the tab root. Empty for a root slot. */
+    path: number[];
+    depth: number;
+    /** Absent exactly when the slot is a root — a single-box tab. */
+    parent?: { orientation: "row" | "column"; index: number; count: number };
+  };
+}
+
+/**
+ * Where a stack of boxes lands. `{slot, side}` and `{edge}` are MUTUALLY EXCLUSIVE — sending both
+ * is `400 bad_request`, and sending neither appends to the tab's root row.
+ *
+ * There is deliberately no "mode": how the room is found beside an anchor is decided by the side
+ * and the two content kinds, through the same table a drag-and-drop goes through.
+ */
+export type SlotTarget =
+  | { slot: string; side?: "left" | "right" | "top" | "bottom"; edge?: never }
+  | { edge: "left" | "right" | "top" | "bottom"; slot?: never; side?: never };
+
+export interface AddSlotsBody {
+  /** Target tab; the active tab when omitted. */
+  tabId?: string;
+  target?: SlotTarget;
+  /** How the items stack relative to each other. */
+  orientation?: "row" | "column";
+  contents: Array<PlaceableContent & { share?: number }>;
+  activate?: boolean;
+}
+
+/** `POST /app/chart-windows`. `interval` is chart-only, `intervals` (three) is comboChart-only. */
+export type OpenChartWindowBody =
+  | {
+      kind: "chart";
+      exchange: string;
+      symbol: string;
+      interval?: string;
+      intervals?: never;
+      tabId?: string;
+      activate?: boolean;
+    }
+  | {
+      kind: "comboChart";
+      exchange: string;
+      symbol: string;
+      intervals?: [string, string, string];
+      interval?: never;
+      tabId?: string;
+      activate?: boolean;
+    };
+
+export interface UpdateChartWindowBody {
+  exchange?: string;
+  symbol?: string;
+  /** `chart` only. */
+  interval?: string;
+  /** `comboChart` only — exactly three. */
+  intervals?: [string, string, string];
+  /** Re-home to another tab. */
+  tabId?: string;
+  pinned?: boolean;
+  locked?: boolean;
+  /** `comboChart` only. Exclusive across combo windows. */
+  sync?: boolean;
+  /** Raise it. Only `true` — "unraise" names no destination. */
+  active?: true;
+}
+
 /** `[method, path, requiresToken, scope]` — the terminal's route table, test-pinned. */
 export declare const ROUTES: ReadonlyArray<readonly [string, string, boolean, Scope]>;
 export declare const CHANNELS: readonly Channel[];
@@ -251,6 +437,66 @@ export declare const panels: {
   clear(slotId: string): Promise<SlotAction>;
   remove(slotId: string): Promise<SlotAction>;
   combo(body: unknown): Promise<unknown>;
+};
+
+export declare const workspace: {
+  /** Every window, its tabs, each tab's layout tree and the chart windows it owns. */
+  get(params?: { windowId?: string; tabId?: string }): Promise<WorkspaceResponse>;
+  /** The windows alone, without any tab payload. */
+  windows(): Promise<{ windows: WorkspaceWindowSummary[] }>;
+  /** Raise a window to the front. */
+  activateWindow(windowId: string): Promise<{ status: string; window: WorkspaceWindowSummary }>;
+  /** One tab, byte-identical to its node in `get()`. */
+  tab(tabId: string): Promise<WorkspaceTabLookup>;
+  /** Create a tab. `activate` defaults to false so a background tool never steals the user's focus. */
+  createTab(body?: { windowId?: string; title?: string; index?: number; activate?: boolean }): Promise<{
+    status: string;
+    tab: WorkspaceTab;
+    position: WorkspaceTabLookup["position"];
+  }>;
+  /**
+   * Activate, rename or reorder. `title` is PATCH-shaped: omit to leave it, a string renames, and
+   * `null` clears it back to the automatic coin + count label.
+   */
+  updateTab(
+    tabId: string,
+    body: { active?: true; raiseWindow?: boolean; title?: string | null; index?: number },
+  ): Promise<{ status: string; tab: WorkspaceTab; position: WorkspaceTabLookup["position"] }>;
+  /** Bring a tab to the front. Raises its window too unless `raiseWindow: false`. */
+  activateTab(tabId: string, raiseWindow?: boolean): Promise<{
+    status: string;
+    tab: WorkspaceTab;
+    position: WorkspaceTabLookup["position"];
+  }>;
+  /** Close a tab and everything it owns. Rejects `409 last_tab` for the main window's only tab. */
+  closeTab(tabId: string): Promise<{ status: string; tabId: string }>;
+  /** ADD boxes. The box named in `target` is an ANCHOR: it survives with its id and feed intact. */
+  addSlots(body: AddSlotsBody): Promise<{ status: string; slots: WorkspaceSlotNode[] }>;
+  /** One box and where it sits. */
+  slot(slotId: string): Promise<WorkspaceSlotLookup>;
+  /** Set what THIS box holds. Idempotent; a kind transition keeps the same slot id. */
+  setSlot(
+    slotId: string,
+    content: PlaceableContent | { kind: "empty" },
+  ): Promise<{ status: string; slot: WorkspaceSlotNode }>;
+  /** Clear a box, keeping it and its id so it can be filled again later. */
+  clearSlot(slotId: string): Promise<{ status: string; slot: WorkspaceSlotNode }>;
+  /** Remove a box. Structural: the box is gone and its id retired. */
+  removeSlot(slotId: string): Promise<{ status: string; slotId: string }>;
+  /** The floating chart windows across every tab, each with the `tabId` that owns it. */
+  chartWindows(params?: { tabId?: string; kind?: "chart" | "comboChart" }): Promise<{ chartWindows: ChartWindow[] }>;
+  /**
+   * Open a coin's chart window or its 3-pane combo chart. Dedupe is by `(kind, exchange, symbol)`:
+   * a pair already open is re-homed and shown, answering 200 rather than opening a second one.
+   */
+  openChartWindow(body: OpenChartWindowBody): Promise<{ status: string; chartWindow: ChartWindow }>;
+  /** Retarget, re-interval, re-home, pin, lock, sync or raise one. At least one field required. */
+  updateChartWindow(
+    chartWindowId: string,
+    body: UpdateChartWindowBody,
+  ): Promise<{ status: string; chartWindow: ChartWindow }>;
+  /** Close one chart window by its durable id. */
+  closeChartWindow(chartWindowId: string): Promise<{ status: string; chartWindowId: string }>;
 };
 
 export declare const notifications: {
