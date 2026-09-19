@@ -319,6 +319,11 @@ export const workspace = {
    * `target` is `{slot, side}` or `{edge}`, never both. There is deliberately no "mode": how the
    * room is found next to an anchor is decided by the side and the two content KINDS, through the
    * same table a drag-and-drop goes through.
+   *
+   * `{tabId?, target?, stack?, slots, activate?}`, where each entry of `slots` is
+   * `{content, share?}` — `share` belongs to the BOX, not to what fills it, and `content` is the
+   * same union `setSlot` takes. At most 16 boxes: the per-widget panel cap charges one token per
+   * REQUEST, so an unbounded list would create arbitrarily many live feeds for free.
    */
   addSlots: (body) => request("POST", "/app/slots", { body }),
 

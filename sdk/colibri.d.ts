@@ -335,13 +335,28 @@ export type SlotTarget =
   | { slot: string; side?: "left" | "right" | "top" | "bottom"; edge?: never }
   | { edge: "left" | "right" | "top" | "bottom"; slot?: never; side?: never };
 
+/**
+ * One box to create. `share` is the box's fraction and belongs to the BOX, not to what fills it —
+ * `content` is the same union `setSlot` takes, so the two writes stay one shape.
+ *
+ * Shares are applied PER INSERTION: the list nests as it is inserted, so the i-th box asks for a
+ * fraction of what is LEFT rather than of the whole. Omit them all for an even split.
+ */
+export interface NewSlot {
+  content: PlaceableContent | { kind: "empty" };
+  share?: number;
+}
+
 export interface AddSlotsBody {
   /** Target tab; the active tab when omitted. */
   tabId?: string;
+  /** Where the boxes land. Omitted is `{ edge: "right" }`. */
   target?: SlotTarget;
-  /** How the items stack relative to each other. */
-  orientation?: "row" | "column";
-  contents: Array<PlaceableContent & { share?: number }>;
+  /** How the NEW boxes arrange among themselves. Ignored for a single box. Default `column`. */
+  stack?: "row" | "column";
+  /** At most 16 — the per-widget panel cap charges one token per REQUEST, not per box. */
+  slots: NewSlot[];
+  /** True also surfaces the window. */
   activate?: boolean;
 }
 
