@@ -1,0 +1,94 @@
+name: routes
+
+# Does colibri.js still match the API it wraps?
+#
+# The terminal's gate already compares this file's ROUTES table against the LIVE route table
+# (LocalApiSdkParityTests) — but only when somebody has this repo cloned beside the terminal. On a
+# fresh machine, in CI, or for anyone who only works on widgets, that check silently skips and
+# proves nothing.
+#
+# This closes that half: it fetches the PUBLISHED schema and compares ROUTES against it, with no
+# checkout of anything else required.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # The terminal can add a route without anyone touching this repo, so a push-only check would
+    # never see it.
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  routes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch the published schema
+        run: curl -fsSL -o /tmp/openapi.yaml https://raw.githubusercontent.com/Colibriecosystem/colibri-sdk/main/docs/openapi.yaml
+
+      - name: ROUTES matches the schema
+        run: |
+          node -e '
+            const { readFileSync } = require("node:fs");
+
+            const schema = readFileSync("/tmp/openapi.yaml", "utf8");
+            const sdk = readFileSync("sdk/colibri.js", "utf8");
+
+            // What the schema publishes.
+            const published = new Set();
+            let path = null;
+            for (const raw of schema.split("\n")) {
+              const line = raw.replace(/\r$/, "");
+              const p = /^ {2}(\/[^\s:]*):\s*$/.exec(line);
+              if (p) { path = p[1]; continue; }
+              const m = /^ {4}(get|post|put|patch|delete):\s*$/.exec(line);
+              if (m && path) published.add(`${m[1].toUpperCase()} ${path}`);
+            }
+            if (published.size === 0) throw new Error("No operations scraped from the schema — did its shape change?");
+
+            // What the SDK advertises: ["GET", "/app/panels", false, "panels"]
+            const rows = [...sdk.matchAll(/\["(?<m>[A-Z]+)",\s*"(?<p>[^"]+)",\s*(?:true|false),\s*"[^"]+"\]/g)]
+              .map((m) => `${m.groups.m} ${m.groups.p}`);
+            if (rows.length === 0) throw new Error("No ROUTES rows found in sdk/colibri.js — did the block change shape?");
+            const advertised = new Set(rows);
+
+            // Routes the SDK claims that the API does not have. This direction is the harmful one:
+            // an author calls the method, the terminal 404s, and the SDK gets the blame.
+            const phantom = [...advertised].filter((r) => !published.has(r)).sort();
+
+            // Routes the API has that the SDK never learned. Reported, not fatal: the SDK covering
+            // a subset is a deliberate state (the workspace surface is still landing), and failing
+            // on it would just get this check disabled.
+            // /ping, /stream and the schema endpoints are served by the TRANSPORT, not the route
+            // table, so they are absent from ROUTES by design rather than by omission.
+            const transport = new Set(["GET /ping", "GET /stream", "GET /openapi.yaml", "GET /asyncapi.yaml"]);
+            const behind = [...published].filter((r) => !advertised.has(r) && !transport.has(r)).sort();
+
+            for (const r of phantom) console.log(`PHANTOM  ${r}  — colibri.js advertises a route the API does not serve`);
+            for (const r of behind) console.log(`behind   ${r}`);
+            console.log(`\ncolibri.js advertises ${advertised.size} routes; the API publishes ${published.size}.`);
+
+            if (phantom.length > 0) {
+              console.log("\nA PHANTOM route is a broken promise: the method exists in the SDK and 404s at runtime.");
+              process.exit(1);
+            }
+          '
+
+      - name: The sample vendors the exact SDK file
+        run: |
+          # The sample is the acceptance artifact — it has to exercise the SHIPPED SDK, not a copy
+          # that quietly fell behind it.
+          diff -q sdk/colibri.js sdk/sample-widget/colibri.js || {
+            echo "sdk/sample-widget/colibri.js has drifted from sdk/colibri.js"
+            exit 1
+          }
