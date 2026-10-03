@@ -209,7 +209,11 @@ code the desktop verifies with**. The form asks only for decoration (description
 which is why it has no security field at all.
 
 After the upload the checks run server-side and the window shows them one by one. A refusal names
-the specific check — your diagnostic, not "submission rejected".
+the specific check and its code, and the terminal says what to fix — your diagnostic, not
+"submission rejected". Every code and what to do about it: [CHECKS.en.md](CHECKS.en.md). The outcome
+stays on the Author tab after the window closes: when a moderator usually answers, the reason and the
+note if one declined the version, and the version's conversation. Fixed the code? "Send a new
+version" on the same row packs the folder and sends it as the next version.
 
 Before your first submission, read [policies/CONTENT.en.md](policies/CONTENT.en.md): what may be
 published, and why asking for a spare permission is a bad idea. What happens if a widget is taken
