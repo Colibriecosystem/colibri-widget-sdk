@@ -77,6 +77,12 @@ There is no `id`. The terminal writes the id Nest issued when you link the folde
 `id` does not fit: lowercase Latin letters, digits and hyphens, at most 40 characters, not starting
 or ending with a hyphen.
 
+### `manifest.id-mismatch`
+
+The archive names a different widget than the one the version was sent to. Nest takes a version
+only into the widget whose ID is in `widget.json`. Link the folder to the right widget again — the
+terminal writes its ID for you — and send it again.
+
 ### `manifest.missing-name`
 
 There is no `name`.
@@ -291,6 +297,10 @@ The widget was deleted while this version was being checked. There is nothing to
 ### `submission.internal`
 
 Nest could not process the submission — our fault, not your archive's. Send it again later.
+
+### `submission.withdrawn`
+
+You withdrew this version from review. Its number stays used: the next version gets a higher one.
 
 ## A moderator's decisions
 
