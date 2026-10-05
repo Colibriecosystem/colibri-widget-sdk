@@ -30,8 +30,8 @@ test data. The archive holds the built widget only.
 
 ### `archive.zip-unreadable`
 
-The file does not open as a zip, or it is damaged. Pack it again with "Pack for Nest" — it builds the
-archive exactly the way Nest checks it.
+The file does not open as a zip, or it is damaged. Release the version again from the Author tab — the
+wizard builds the archive exactly the way Nest checks it.
 
 ### `archive.unsafe-entry-path`
 

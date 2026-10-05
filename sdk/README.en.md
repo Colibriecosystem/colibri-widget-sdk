@@ -147,9 +147,10 @@ the 🧩 menu. Without one, the 🧩 glyph shows everywhere. And on `surfaces`: 
 declares `"window"` can be opened as a standalone window and pinned to the bottom bookmark strip —
 a slot-only widget lives in panels exclusively.
 
-Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
-that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep
-editing is the folder the widget runs from. Place it with the 🧩 button on an empty panel.
+Then, in the terminal: **Nest → Author** — become an author, create a **New widget**, and in its
+**Code** section pick this folder with **Choose a folder…**. The terminal writes the ID Nest issued
+into its `widget.json` and serves the folder **in place** — nothing is copied — so the folder you
+keep editing is the folder the widget runs from. Place it with the 🧩 button on an empty panel.
 
 ### The edit-save-see loop
 
@@ -160,10 +161,10 @@ which cap it hit.
 
 With a bundler, `vite build --watch` (or your equivalent) is the whole loop: it rewrites `dist/`
 on every save and the terminal picks it up. Make sure your `widget.json` is copied into the output
-— in Vite, putting it in `public/` does that.
+— in Vite, putting it in `public/` does that. If your build puts `widget.json` into the output, put the widget's ID (the copy button beside it on the widget's page) into the source file too — otherwise the next build brings the old ID back, and the terminal refuses to release that folder.
 
 If you would rather use HMR, you can: set `entry` to `http://localhost:5173` and the terminal
-loads your dev server directly. That form is accepted **only** for an unpacked widget, and only
+loads your dev server directly. That form is accepted **only** for a folder linked to a widget, and only
 for literal `localhost` / `127.0.0.1` — it is a development affordance, not a distributable
 manifest.
 
@@ -179,7 +180,8 @@ Keep anything the user would be annoyed to re-enter there.
 
 ## Packaging
 
-«Упаковать для «Гнезда»» turns the folder into a `.zip` plus the **content hash** a listing pins.
+The release wizard on the Author tab turns the folder into a `.zip` plus the **content hash** a
+listing pins.
 
 The contract is over the **extracted content, never the zip bytes**: extract the archive to a
 directory, hash it, and you must get the same value. That is deliberate — it means the hash you

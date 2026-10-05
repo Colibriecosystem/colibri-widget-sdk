@@ -12,9 +12,11 @@ npm install
 npm run build
 ```
 
-Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
-the **`dist/`** folder (that one, not the project root). The terminal asks for the permissions
-declared in `public/widget.json`. Accept, then press 🧩 on an empty panel and choose the widget.
+Then, in the terminal: **Nest → Author** — become an author and create a **New widget**. Copy its ID
+(the copy button beside the ID on the widget's page) into the `id` field of `public/widget.json`
+and build again, then in the **Code** section pick the **`dist/`** folder (that one, not the
+project root) with **Choose a folder…**. The terminal asks for the permissions declared in
+`public/widget.json`. Accept, then press 🧩 on an empty panel and choose the widget.
 
 You get the live best bid and ask for BTCUSDT.
 
@@ -59,5 +61,5 @@ served from its own folder, so asset URLs have to be relative.
 - A screener fetches market data **itself**, from the venue: the `markets.*` routes serve what the
   terminal has open and by construction cannot answer a whole-venue scan. List the hosts in the
   manifest's `egress`.
-- When the widget is ready: **«Упаковать для «Гнезда»»** on its row produces a `.zip` plus the hash
-  a listing pins.
+- When the widget is ready: **Release a version** on its page in the Author tab — the wizard packs
+  the archive, shows its hash and sends the version for review.

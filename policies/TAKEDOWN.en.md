@@ -61,4 +61,4 @@ to a version the feed does not name heals on their own.
 ## See also
 
 - [CONTENT.en.md](CONTENT.en.md) — what may be published.
-- [AUTHORING.en.md](../AUTHORING.en.md) — the author's three stages.
+- [AUTHORING.en.md](../AUTHORING.en.md) — the author's path, from a folder to the catalog.
