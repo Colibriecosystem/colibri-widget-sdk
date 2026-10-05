@@ -67,8 +67,11 @@ it under **I already have an author ID**.
 
 ## A new widget
 
-**New widget** asks only for a name; Nest issues the widget's ID. The category and description can
-be filled in now or later — before the first version. The widget's page opens: **Overview**, with
+**New widget** asks for a name and an **ID** — the same as the `id` field in your `widget.json`: a
+widget's ID in Nest is your own. **From a folder…** takes the ID and the name from the chosen
+folder's `widget.json` and links the folder to the widget as soon as it is created. The ID must be
+free — Nest refuses a taken one. The category and description can be filled in now or later —
+before the first version. The widget's page opens: **Overview**, with
 the one next step and what is still missing before the first version, and the **Versions**,
 **Listing**, **Code**, **Access** and **Stats** sections.
 
@@ -76,10 +79,11 @@ the one next step and what is still missing before the first version, and the **
 
 ## Development: the project folder
 
-**Code → Choose a folder….** The terminal writes the widget's ID into the folder's `widget.json`
-(showing you the old and the new ID first — only the `id` field changes, the rest of the file is
-left alone) and serves the folder **in place** — nothing is copied. A folder that already belongs
-to another of your widgets is refused.
+**Code → Choose a folder….** The folder must carry this widget's ID in its `widget.json`: the
+terminal serves it **in place** — nothing is copied, and it never changes the file. If the folder
+carries another ID, the terminal says which one it needs. A draft that has no version yet can
+instead take the folder's ID — the old one can never be used again after that. A folder that
+already belongs to another of your widgets is refused.
 
 DevTools are always offered, logs are full, and the **Hot reload** toggle rebuilds the widget about
 half a second after every save (a burst of saves collapses into one reload). **Reload** does the
@@ -106,8 +110,8 @@ my-widget/
 ```
 
 `id` doubles as the install folder name and the virtual-host label, so it is strictly a lowercase
-DNS label (`a–z`, `0–9`, hyphens). Linking the folder replaces it with the ID Nest issued — until
-then, any will do. If your build puts `widget.json` into the output, put the widget's ID (the copy button beside it on the widget's page) into the source file too — otherwise the next build brings the old ID back, and the terminal refuses to release that folder. `entry` is a path inside the folder. A full starter project (TS + React, no
+DNS label (`a–z`, `0–9`, hyphens, up to 40 characters). It is the widget's ID in Nest: choose it
+once — it does not change after the first version. `entry` is a path inside the folder. A full starter project (TS + React, no
 framework lock-in) lives in [`template/`](template/).
 
 The optional `icon` field is an image path **inside the bundle** (a URL is not accepted): the

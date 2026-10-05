@@ -70,7 +70,7 @@ There is no `widget.json` at the archive's root. It must sit at the root, not in
 
 ### `manifest.missing-id`
 
-There is no `id`. The terminal writes the id Nest issued when you link the folder to the widget.
+There is no `id`. Put in your widget's ID — the one it was created under on the Author tab.
 
 ### `manifest.invalid-id`
 

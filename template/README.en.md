@@ -12,10 +12,9 @@ npm install
 npm run build
 ```
 
-Then, in the terminal: **Nest → Author** — become an author and create a **New widget**. Copy its ID
-(the copy button beside the ID on the widget's page) into the `id` field of `public/widget.json`
-and build again, then in the **Code** section pick the **`dist/`** folder (that one, not the
-project root) with **Choose a folder…**. The terminal asks for the permissions declared in
+First put your own ID into the `id` field of `public/widget.json` — the widget lives in Nest under
+it — and build. Then, in the terminal: **Nest → Author** — become an author, press **New widget** →
+**From a folder…** and pick the **`dist/`** folder (that one, not the project root). The terminal asks for the permissions declared in
 `public/widget.json`. Accept, then press 🧩 on an empty panel and choose the widget.
 
 You get the live best bid and ask for BTCUSDT.
