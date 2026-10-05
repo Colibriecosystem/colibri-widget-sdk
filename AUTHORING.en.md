@@ -67,11 +67,12 @@ it under **I already have an author ID**.
 
 ## A new widget
 
-**New widget** asks for a name and an **ID** — the same as the `id` field in your `widget.json`: a
-widget's ID in Nest is your own. **From a folder…** takes the ID and the name from the chosen
-folder's `widget.json` and links the folder to the widget as soon as it is created. The ID must be
-free — Nest refuses a taken one. The category and description can be filled in now or later —
-before the first version. The widget's page opens: **Overview**, with
+**New widget** asks for a name only. A widget's ID is the `id` field in its `widget.json`: you (or
+your AI agent) write it with the code, and the terminal never asks for it. **From a folder…** takes
+the name and the ID from the chosen folder's `widget.json` and links the folder to the widget as soon
+as it is created; without a folder, the widget gets its ID as soon as you link one on the **Code**
+section. The ID must be free — Nest refuses a taken one, and you change it in `widget.json`. The
+category and description can be filled in now or later — before the first version. The widget's page opens: **Overview**, with
 the one next step and what is still missing before the first version, and the **Versions**,
 **Listing**, **Code**, **Access** and **Stats** sections.
 
