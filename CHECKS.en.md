@@ -80,8 +80,8 @@ or ending with a hyphen.
 ### `manifest.id-mismatch`
 
 The archive names a different widget than the one the version was sent to. Nest takes a version
-only into the widget whose ID is in `widget.json`. Link the folder to the right widget again — the
-terminal writes its ID for you — and send it again.
+only into the widget whose ID is in `widget.json`. Put this widget's ID into `widget.json` — or,
+while the widget has no version yet, let it take the folder's ID (Author → Code) — and send it again.
 
 ### `manifest.missing-name`
 

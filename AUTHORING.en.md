@@ -82,7 +82,7 @@ the one next step and what is still missing before the first version, and the **
 **Code → Choose a folder….** The folder must carry this widget's ID in its `widget.json`: the
 terminal serves it **in place** — nothing is copied, and it never changes the file. If the folder
 carries another ID, the terminal says which one it needs. A draft that has no version yet can
-instead take the folder's ID — the old one can never be used again after that. A folder that
+instead take the folder's ID — the old one is then free again. A folder that
 already belongs to another of your widgets is refused.
 
 DevTools are always offered, logs are full, and the **Hot reload** toggle rebuilds the widget about
