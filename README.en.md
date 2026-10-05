@@ -2,7 +2,7 @@
 
 > Русская версия — [README.md](README.md), она же основная.
 >
-> The author's path — three stages, from a folder to the catalog: [AUTHORING.en.md](AUTHORING.en.md).
+> The author's path — from a folder to the catalog: [AUTHORING.en.md](AUTHORING.en.md).
 >
 > Publication and revocation rules: [policies/](policies/).
 
@@ -180,9 +180,10 @@ window headers, the 🧩 menu. Without one, the 🧩 glyph shows everywhere.
 And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
 pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
 
-Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
-that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep
-editing is the folder the widget runs from. Place it with the 🧩 button on an empty panel.
+Then, in the terminal: **Nest → Author** — become an author, press **New widget** → **From a
+folder…** and pick this folder: the ID and the name come from its `widget.json`. The terminal serves
+the folder **in place** — nothing is copied — so the folder you keep editing is the folder the
+widget runs from. Place it with the 🧩 button on an empty panel.
 
 ### The edit-save-see loop
 
@@ -196,7 +197,7 @@ on every save and the terminal picks it up. Make sure your `widget.json` is copi
 — in Vite, putting it in `public/` does that.
 
 If you would rather use HMR, you can: set `entry` to `http://localhost:5173` and the terminal
-loads your dev server directly. That form is accepted **only** for an unpacked widget, and only
+loads your dev server directly. That form is accepted **only** for a folder linked to a widget, and only
 for literal `localhost` / `127.0.0.1` — it is a development affordance, not a distributable
 manifest. The same `connect-src` applies to a dev-served page, with your dev origin spelled out as
 `'self'` including its port — so Vite's HMR socket on the entry's own port just works, while an
@@ -215,7 +216,8 @@ Keep anything the user would be annoyed to re-enter there.
 
 ## Packaging
 
-«Упаковать для «Гнезда»» turns the folder into a `.zip` plus the **content hash** a listing pins.
+The release wizard on the Author tab turns the folder into a `.zip` plus the **content hash** a
+listing pins.
 
 The contract is over the **extracted content, never the zip bytes**: extract the archive to a
 directory, hash it, and you must get the same value. That is deliberate — it means the hash you

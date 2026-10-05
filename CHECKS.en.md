@@ -30,8 +30,8 @@ test data. The archive holds the built widget only.
 
 ### `archive.zip-unreadable`
 
-The file does not open as a zip, or it is damaged. Pack it again with "Pack for Nest" — it builds the
-archive exactly the way Nest checks it.
+The file does not open as a zip, or it is damaged. Release the version again from the Author tab — the
+wizard builds the archive exactly the way Nest checks it.
 
 ### `archive.unsafe-entry-path`
 
@@ -70,7 +70,7 @@ There is no `widget.json` at the archive's root. It must sit at the root, not in
 
 ### `manifest.missing-id`
 
-There is no `id`. The terminal writes the id Nest issued when you link the folder to the widget.
+There is no `id`. Put in your widget's ID — the one it was created under on the Author tab.
 
 ### `manifest.invalid-id`
 
@@ -80,8 +80,8 @@ or ending with a hyphen.
 ### `manifest.id-mismatch`
 
 The archive names a different widget than the one the version was sent to. Nest takes a version
-only into the widget whose ID is in `widget.json`. Link the folder to the right widget again — the
-terminal writes its ID for you — and send it again.
+only into the widget whose ID is in `widget.json`. Put this widget's ID into `widget.json` — or,
+while the widget has no version yet, let it take the folder's ID (Author → Code) — and send it again.
 
 ### `manifest.missing-name`
 

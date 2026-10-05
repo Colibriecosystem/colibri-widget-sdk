@@ -59,4 +59,4 @@
 ## См. также
 
 - [CONTENT.md](CONTENT.md) — что можно публиковать.
-- [AUTHORING.md](../AUTHORING.md) — три стадии пути автора.
+- [AUTHORING.md](../AUTHORING.md) — путь автора: от папки до каталога.
