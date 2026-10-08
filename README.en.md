@@ -137,6 +137,28 @@ predates v2 ignores the field and answers v1, so this SDK needs a terminal that 
 `supportedApiVersions` on `GET /ping`. **From terminal 1.4.0 v1 is removed and the header is
 ignored**; nothing changes for a client already on v2.
 
+### A widget's version number and compatibility
+
+- `version` is three numbers `X.Y.Z` with no leading zeros and no suffix: `1.2.3`, not `v1.2.3`, `1.2`
+  or `1.2.3-beta.1`. Nest has no pre-release channel: every approved version reaches every user.
+- Numbers only grow and never repeat. A new version must be above every version the widget ever had:
+  approved, waiting for review, declined by a moderator, and withdrawn by you. The only number that
+  stays free is one whose archive failed the automatic checks — that version was never stored. A
+  rollback to an earlier version is a new, higher number too.
+- Which part to raise: `Z` for a fix; `Y` for new features with nothing for the user to do; `X` when
+  the user has to act — agree to new permissions or hosts, update Colibri, or set the widget up again.
+  The terminal's release wizard suggests `X` in those cases.
+- `minColibriVersion` is optional: the oldest terminal the widget works on, as three numbers
+  (`"minColibriVersion": "1.4.0"`). Terminals newer than 1.3.1 do not install, offer as an update, or
+  start a version that needs a newer Colibri: the user sees "Requires Colibri 1.4.0 or newer", and the
+  version they already have keeps working. Terminals 1.3.1 and older do not read the field. A
+  pre-release terminal build (`1.4.0-beta.2`) counts as `1.4.0`.
+- `minApiVersion` is something else: the version of the `window.colibri` contract, which grows only
+  with a breaking API change. If your widget needs a feature from Colibri 1.4, use
+  `minColibriVersion`.
+
+The registry's refusals for a number, and their codes, are in [CHECKS.en.md](CHECKS.en.md).
+
 ## Building a widget
 
 A widget is a folder holding a `widget.json` and whatever your build produces. There is no SDK

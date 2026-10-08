@@ -117,6 +117,10 @@ the minimum you need in your `widget.json` as `minApiVersion` — the terminal r
 widget that needs a newer API rather than failing halfway through its first call. This package's
 semver major tracks `apiVersion`.
 
+If your widget needs a feature from a particular terminal version, declare it as
+`"minColibriVersion": "1.4.0"`: an older terminal neither installs nor starts that version. The
+rules for `version` are in the [README](../README.en.md#a-widgets-version-number-and-compatibility).
+
 ## Building a widget
 
 A widget is a folder holding a `widget.json` and whatever your build produces. There is no SDK
