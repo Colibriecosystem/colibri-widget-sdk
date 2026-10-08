@@ -97,7 +97,18 @@ There is no `version`.
 
 ### `manifest.invalid-version`
 
-`version` is not a number like `1.2.3` (a suffix like `-beta.1` is fine), or it is over 32 characters.
+`version` is not three numbers like `1.2.3`, or it is over 32 characters.
+
+### `manifest.version-prerelease`
+
+The number has a suffix, such as `1.2.3-beta.1`. Nest has no pre-release channel: every approved
+version reaches every user, so a suffix means nothing here. Drop it and send a plain `1.2.3`. The
+rules for numbers are in the [README](README.en.md#a-widgets-version-number-and-compatibility).
+
+### `manifest.version-not-plain`
+
+The number is not three plain numbers: it has a leading zero (`01.2.0`) or a part over nine digits.
+Write it like `1.2.3`.
 
 ### `manifest.invalid-author`
 
@@ -145,6 +156,11 @@ An `egress` address is malformed. It must be a host (`api.example.com`), a host 
 ### `manifest.invalid-min-api-version`
 
 `minApiVersion` must be a whole number, at least 1.
+
+### `manifest.invalid-min-colibri-version`
+
+`minColibriVersion` — the oldest Colibri the widget works on — is not three numbers. Write it like
+`1.4.0`, with no suffix, or leave the field out when any terminal will do.
 
 ### `manifest.invalid-icon`
 
@@ -267,8 +283,9 @@ This id belongs to another author. Check the `id` in `widget.json` — the termi
 
 ### `ownership.version-not-after`
 
-The version number is not above the highest this widget ever had, declined and waiting versions
-included. Raise the number.
+The version number is not above the highest this widget ever had, declined, waiting and withdrawn
+versions included: numbers only grow and never repeat. Raise the number. The only number that stays
+free is one whose archive failed the automatic checks — that version was never stored.
 
 ## The listing
 
