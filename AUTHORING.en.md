@@ -61,7 +61,6 @@ my-widget/
 ```json
 {
   "id": "my-widget",
-  "name": "My Widget",
   "version": "0.1.0",
   "entry": "index.html",
   "surfaces": ["slot", "window"],
@@ -73,18 +72,23 @@ my-widget/
 DNS label (`a–z`, `0–9`, hyphens). `entry` is a path inside the folder. A full starter project
 (TS + React, no framework lock-in) lives in [`template/`](template/).
 
-The optional `icon` field is an image path **inside the bundle** (a URL is not accepted): the
-terminal renders it everywhere the widget is visible — the catalog card and listing, the
-My-widgets list, the Notifications window Widgets tab, the bottom-strip bookmark, the panel and
-window headers, the 🧩 menu. Without one, the 🧩 glyph shows everywhere.
+There is no name, icon or author in `widget.json` — they live on the widget itself, in Nest. You set
+the name and the icon on the terminal's Author tab → your widget → its listing; the byline is the
+name in your author profile (see stage 3). The terminal renders the icon everywhere the widget is
+visible — the catalog card and listing, the My-widgets list, the Notifications window Widgets tab,
+the bottom-strip bookmark, the panel and window headers, the 🧩 menu. Without one, the 🧩 glyph
+shows everywhere.
 
 - **Format** — PNG (JPEG and WEBP are read too); **SVG is not supported**.
 - **File size** — up to 512 KB.
 - **Image size** — 128×128, square, transparent background: the largest the icon is ever drawn is
   44×44 in the listing header, and 22–26 px in lists.
-- **Failures are silent.** A wrong path, a file over the cap, a format that cannot be decoded —
-  each simply leaves the 🧩 glyph, with no message anywhere. If the icon "did not show up", check
-  the path and the file size first.
+
+A `widget.json` with `name`, `icon` or `author` still works: Nest does not refuse such a version, it
+marks it with the informational [`manifest.legacy-fields`](CHECKS.en.md#manifestlegacy-fields),
+which does not stop automatic approval; the terminal's "Remove from widget.json" button takes the
+fields out for you. On Colibri 1.3.2 or older keep `name`: without it those releases neither load
+the folder nor install a version.
 
 And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
 pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
@@ -125,7 +129,9 @@ content.
 If the link does not end in `.zip`, the dialog expands a form: **Name**, **ID** (auto-derived from
 the name, editable), **Version**, **Surfaces** (slot / window), **Permissions** (the same seven
 the user sees in the consent dialog), and **Extra network hosts**. The link's own host always
-joins `egress` — no need to type it.
+joins `egress` — no need to type it. The form asks for a name for an address installed on this
+machine only, and the name does not go into the `widget.json` itself; an address linked to a widget
+in Nest carries the name set on that widget in Nest.
 
 The terminal mints the one-file `widget.json` itself and installs it as a hosted widget. For
 example, the form
@@ -140,7 +146,6 @@ becomes exactly this manifest:
 ```json
 {
   "id": "my-screener",
-  "name": "My Screener",
   "version": "1.0.0",
   "entry": "https://screener.example.com/app/",
   "surfaces": ["slot", "window"],
@@ -153,20 +158,21 @@ The honest difference of hosted mode: identity here is the **origin, not a conte
 Whatever that URL serves tomorrow is what runs — which is why the card wears the amber `hosted`
 chip instead of the green `bundled · hash ✓`.
 
-**A hosted widget's logo, and publishing one.** The URL form mints a one-file `widget.json` and has
-no `icon` field: such a widget keeps the 🧩 glyph everywhere, and it never grows a "Pack for Nest"
-button — that button belongs to an unpacked (dev) widget only. So if your hosted widget wants its
-own logo or a place in the catalog, build the folder by hand — it is two files:
+**A hosted widget's logo, and publishing one.** The URL form does not ask for an icon: an address
+installed on this machine only keeps the 🧩 glyph everywhere. A hosted widget gets its logo the way
+any other widget does — on the widget in Nest (the Author tab → the widget → its listing), with no
+folder or `icon.png` needed for it. What a widget installed from a URL never grows is a "Pack for
+Nest" button — that button belongs to an unpacked (dev) widget only. So if your hosted widget wants
+a place in the catalog, build the folder by hand — it is one file:
 
 ```
 my-widget/
-├─ widget.json   ← entry: "https://your-domain/app/"
-└─ icon.png
+└─ widget.json   ← entry: "https://your-domain/app/"
 ```
 
 and load it with **Load unpacked…**. From there it is like any other widget: "Pack for Nest" →
-"Listed". Only the manifest and the icon travel in the archive — the code stays on your server, and
-the hash covers exactly those two files.
+"Listed". Only the manifest travels in the archive — the code stays on your server, and the hash
+covers exactly that one file.
 
 ---
 
@@ -203,10 +209,14 @@ happens inside the terminal: **Nest → Add widget → "Listed"**.
 }
 ```
 
-A card cannot overstate or understate permissions: everything security-relevant — name, version,
+A card cannot overstate or understate permissions: everything security-relevant — version,
 surfaces, permissions, network hosts — derives from the archive's own manifest, **using the same
 code the desktop verifies with**. The form asks only for decoration (descriptions, category, tags),
-which is why it has no security field at all.
+which is why it has no security field at all. The name does not come from the archive either: it
+belongs to the widget and is set in Nest, on the Author tab, in the widget's listing. Only an upload
+from an old Colibri that creates the widget itself takes it from the manifest — once, so the new
+widget has something to be called
+(see [`manifest.legacy-fields`](CHECKS.en.md#manifestlegacy-fields)).
 
 After the upload the checks run server-side and the window shows them one by one. A refusal names
 the specific check and its code, and the terminal says what to fix — your diagnostic, not

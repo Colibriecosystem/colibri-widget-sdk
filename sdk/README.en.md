@@ -129,10 +129,8 @@ install step and no toolchain the terminal cares about — if it emits HTML, it 
 ```json
 {
   "id": "my-widget",
-  "name": "My Widget",
   "version": "1.0.0",
   "entry": "index.html",
-  "icon": "icon.png",
   "surfaces": ["slot"],
   "permissions": ["marketData"],
   "minApiVersion": 1
@@ -144,12 +142,15 @@ install step and no toolchain the terminal cares about — if it emits HTML, it 
 asked to consent to — declare only what you use, since a manifest that grows a permission asks
 again.
 
-The optional `icon` field is an image path inside the bundle (PNG, up to 512 KB): the terminal
-renders it everywhere the widget is visible — the catalog card and listing, the My-widgets list,
-the Notifications window Widgets tab, the bottom-strip bookmark, the panel and window headers,
-the 🧩 menu. Without one, the 🧩 glyph shows everywhere. And on `surfaces`: only a widget that
-declares `"window"` can be opened as a standalone window and pinned to the bottom bookmark strip —
-a slot-only widget lives in panels exclusively.
+The manifest holds no name, icon or author: the name and the icon are set on the widget in Nest
+(the Author tab → the widget → its listing), and the byline is the name in the author's profile. An
+older `widget.json` with these fields still works — Nest marks them with
+[`manifest.legacy-fields`](../CHECKS.en.md#manifestlegacy-fields) and never refuses them — but on
+Colibri 1.3.2 or older keep `name`: without it those releases neither load the folder nor install a
+version. More in the [README](../README.en.md#name-icon-and-author).
+
+And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
+pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
 
 Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
 that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep

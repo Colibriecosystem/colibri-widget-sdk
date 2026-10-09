@@ -1,10 +1,7 @@
 {
   "id": "funding-monitor",
-  "name": "Фандинг-монитор",
   "version": "1.0.0",
-  "author": "Colibri",
   "entry": "index.html",
-  "icon": "icon.png",
   "surfaces": ["slot", "window"],
   "permissions": ["notifications", "signalLevels", "storage"],
   "egress": [
