@@ -171,10 +171,8 @@ The hosted-or-bundled fork is laid out in [AUTHORING.en.md](AUTHORING.en.md).
 ```json
 {
   "id": "my-widget",
-  "name": "My Widget",
   "version": "1.0.0",
   "entry": "index.html",
-  "icon": "icon.png",
   "surfaces": ["slot"],
   "permissions": ["marketData"],
   "minApiVersion": 1
@@ -188,25 +186,26 @@ again. What your page may ask the browser for — the microphone, the camera, th
 is a separate optional list, `browserPermissions`; the allowed names and the rules are in
 [CAPABILITIES.en.md § Browser permissions](CAPABILITIES.en.md#browser-permissions).
 
-The optional `icon` field is an image path **inside the bundle** (a URL is not accepted): the
-terminal renders it everywhere the widget is visible — the catalog card and listing, the
-My-widgets list, the Notifications window Widgets tab, the bottom-strip bookmark, the panel and
-window headers, the 🧩 menu. Without one, the 🧩 glyph shows everywhere.
-
-- **Format** — PNG (JPEG and WEBP are read too); **SVG is not supported**.
-- **File size** — up to 512 KB.
-- **Image size** — 128×128, square, transparent background: the largest the icon is ever drawn is
-  44×44 in the listing header, and 22–26 px in lists.
-- **Failures are silent.** A wrong path, a file over the cap, a format that cannot be decoded —
-  each simply leaves the 🧩 glyph, with no message anywhere. If the icon "did not show up", check
-  the path and the file size first.
-
 And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
 pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
 
 Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
 that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep
 editing is the folder the widget runs from. Place it with the 🧩 button on an empty panel.
+
+### Name, icon and author
+
+They are not in `widget.json`: a widget's name, icon and author live on the widget itself, in Nest.
+You set the name and the icon on the terminal's Author tab → your widget → its listing; the byline
+is the name in your author profile. The terminal shows the icon everywhere the widget is visible,
+and the 🧩 glyph without one. A PNG (JPEG and WEBP work too, SVG does not) up to 512 KB will do; a
+square 128×128 on a transparent background is best.
+
+A `widget.json` that still has these fields keeps working: Nest does not refuse such a version, it
+marks it with the informational [`manifest.legacy-fields`](CHECKS.en.md#manifestlegacy-fields),
+which does not stop automatic approval. The terminal's "Remove from widget.json" button takes them
+out for you. The exception is Colibri 1.3.2 or older: without `name` those releases neither load
+the folder nor install a version, so while you or your users are on one, keep `name`.
 
 ### The edit-save-see loop
 

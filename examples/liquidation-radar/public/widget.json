@@ -1,10 +1,7 @@
 {
   "id": "liquidation-radar",
-  "name": "Радар ликвидаций",
   "version": "1.0.0",
-  "author": "Colibri",
   "entry": "index.html",
-  "icon": "icon.png",
   "surfaces": ["slot"],
   "permissions": ["notifications", "signalLevels", "storage"],
   "egress": [
