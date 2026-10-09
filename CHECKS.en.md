@@ -11,7 +11,9 @@ How to read a result:
 - **Refused by the checks** — the archive failed an automated check. The version was not stored, so
   you can send the same version number again once it is fixed.
 - **Warning** — a check found something a person should look at. It does not stop the submission,
-  but there is no automatic approval: a moderator reviews the version.
+  but there is no automatic approval: a moderator reviews the version. The exception is
+  [`manifest.legacy-fields`](#manifestlegacy-fields): it is for your information only and does not
+  stop automatic approval.
 - **Declined by a moderator** — the version was stored and declined after a person reviewed it. You
   can answer in that version's conversation; send the fixed code as the next version (the number
   must be higher).
@@ -85,11 +87,16 @@ terminal writes its ID for you — and send it again.
 
 ### `manifest.missing-name`
 
-There is no `name`.
+The upload names no widget (that is how an old Colibri sends a version), Nest does not know the id
+in `widget.json` yet, and the manifest has no `name` — the new widget has nothing to be called.
+Create the widget in Nest first (the Author tab), then release a version into it. In every other
+case `name` is not needed: the name lives on the widget in Nest.
 
 ### `manifest.invalid-name`
 
-`name` is empty or over 64 characters.
+`name` is there but empty or over 64 characters. The field is checked only when it is present.
+Better remove it: the name is set on the widget in Nest (see `manifest.legacy-fields`). On Colibri
+1.3.2 or older keep `name` (Nest ignores it) and just fix it.
 
 ### `manifest.missing-version`
 
@@ -112,7 +119,8 @@ Write it like `1.2.3`.
 
 ### `manifest.invalid-author`
 
-`author` is over 64 characters.
+`author` is there and over 64 characters. Nest does not read this field: the byline is the owner's
+profile name. Remove `author` from `widget.json` (see `manifest.legacy-fields`).
 
 ### `manifest.missing-entry`
 
@@ -164,7 +172,8 @@ An `egress` address is malformed. It must be a host (`api.example.com`), a host 
 
 ### `manifest.invalid-icon`
 
-The icon path is over 256 characters.
+`icon` is there and the icon path is over 256 characters. Better remove the field: the icon is set
+on the widget in Nest (see `manifest.legacy-fields`). If you keep it, shorten the path.
 
 ## Integrity
 
@@ -199,10 +208,31 @@ showed.
 
 ## What the code does
 
+### `manifest.legacy-fields`
+
+A warning for your information only: unlike the others, it does not stop automatic approval.
+`widget.json` holds `name`, `icon` or `author`. A widget's name, icon and author now live on the
+widget in Nest: the name and the icon are set on the terminal's Author tab, in the widget's listing,
+and the author is the owner's profile name. Nest never refuses these fields; with each it does this:
+
+- `name` becomes the name of a new widget, once, and only when the upload itself creates the widget
+  (an old Colibri sends a version with an id Nest does not know yet). Otherwise it is not read.
+- `icon` becomes the widget's icon once: for a new widget, or for a draft that was never approved
+  and has no icon yet. Colibri 1.3.0 or older sends versions the old way and cannot upload an icon
+  on its own, so from it `icon` is still applied as the widget's icon on every upload. Otherwise it
+  is not read.
+- `author` is never read: the byline is the owner's profile name.
+
+What to do: remove these fields from `widget.json` — the terminal's "Remove from widget.json" button
+does it — and set the name and the icon in Nest. On Colibri 1.3.2 or older keep `name` — Nest
+ignores it, and those releases need it to load the folder.
+
 ### `consistency.mismatch`
 
 A warning. The `entry` file or the `icon` is missing from the archive or is the wrong kind of file
-(`entry` is an `.html`, the icon an image). Check the paths in `widget.json`.
+(`entry` is an `.html`, the icon an image). Nest checks the icon only when it will actually use it:
+it seeds a new widget or a never-approved draft, or an old Colibri's upload applies it (see
+`manifest.legacy-fields`). Check the paths in `widget.json`, or remove `icon`.
 
 ### `content.dynamic-code`
 
