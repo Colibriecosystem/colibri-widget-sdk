@@ -35,7 +35,7 @@ These are not settings — they are construction. No manifest permission lifts t
 | --- | --- | --- |
 | Network is declared-only | A page request goes only to your own origin and the hosts in `egress`; everything else is refused. Declare EVERY host, exchange WebSocket hosts included. Two mechanisms, one list: `fetch`/XHR/images/scripts/frames are refused by the terminal (a synthetic 403), and WebSockets by the browser itself — your document is served with a `Content-Security-Policy: connect-src` built from `'self'` plus every `egress` host as `https://` + `wss://`, so an undeclared `new WebSocket(...)` throws a `SecurityError` at construction. A host declared without a port matches any port; one declared with a port (`ws.okx.com:8443`) matches only that port | At install the user sees where the widget can send data. The list is a promise, and the terminal enforces it |
 | `127.0.0.1` is unreachable | Loopback and IP literals cannot go into `egress`, and the page cannot reach them. That covers both the terminal's own Local API and any local program. This is a final decision, not a temporary limitation — see pattern 4 below | The Local API is the door for native programs with a different trust model; a widget doesn't need it — the `window.colibri` bridge does more, with no port and no token |
-| No files, no processes | No filesystem, OS, or other-process access. Storage is `colibri.storage`, a 5 MB key-value store per widget | A widget must be exactly as safe as its consent claims — and a consent cannot honestly describe "access to the whole computer" |
+| No disk browsing, no processes | A page cannot browse the filesystem, start a program or touch another process. It reads only a file the user picks, and writes only to a file the user picks — and only when it declares `file-read-write` (see [Browser permissions](#browser-permissions)). Storage is `colibri.storage`, a 5 MB key-value store per widget | A widget must be exactly as safe as its consent claims — and a consent cannot honestly describe "access to the whole computer" |
 | Nothing runs while the terminal is closed | A widget lives as long as the terminal does. There are no background services | A widget is part of the terminal, not a separate program |
 | Rate and money limits | 300 bridge calls per minute per widget; `colibri.net.fetch` has its own budget; per-connection trading budgets (default $250 per order, 12 orders per minute — the user can lift them) | A bug in a loop must not cost the user money or CPU |
 | Bundle caps | 2 000 files / 20 MB per file / 50 MB total | The bundle hash is verified at every start — the size has to stay verifiable |
@@ -43,6 +43,71 @@ These are not settings — they are construction. No manifest permission lifts t
 And one boundary that works in your favor: **the Local API token and port never appear in page
 code**. Widget identity is structural (the terminal knows which WebView is speaking), so there is
 simply no secret in your code to leak.
+
+## Browser permissions
+
+A web page normally asks the browser for the microphone, the camera, the clipboard or files through a
+permission window. **In the terminal that window never appears** — a user would take it for the
+terminal itself asking. The terminal answers every such request on its own, from this list:
+
+| `browserPermissions` name | What it gives the page | Decision |
+| --- | --- | --- |
+| `microphone` | `getUserMedia({ audio: true })` | Allowed, after the user consents |
+| `camera` | `getUserMedia({ video: true })` | Allowed, after the user consents |
+| `clipboard-read` | `navigator.clipboard.readText()` / `read()` | Allowed, after the user consents — and **only from a click or key handler** |
+| `file-read-write` | Writing to a file or folder the user picked (`showSaveFilePicker`, `createWritable`) | Allowed, after the user consents |
+| `autoplay` | Sound and video that start without a click (`audio.play()`, `autoplay`, Web Audio) | Allowed, after the user consents |
+| `notifications` | The browser's `Notification` | **Never** — declare the `notifications` permission and notify through `window.colibri` |
+| `persistent-storage` | `navigator.storage.persist()` | **Never** — use `colibri.storage` |
+| `geolocation`, `sensors`, `automatic-downloads`, `local-fonts`, `midi-sysex`, `window-management` | Location, motion sensors, several downloads in a row, the list of installed fonts, MIDI device messages, placing windows across screens | **Never** |
+| Anything else | A capability a future browser adds | **Never**, until this list says otherwise |
+
+How a permission from the "allowed" rows reaches your page:
+
+1. **You declare it** in `widget.json`, in its own list — terminal permissions stay in `permissions`:
+
+   ```json
+   "browserPermissions": ["microphone", "clipboard-read"]
+   ```
+
+   A name that is not on the list, or one the list forbids, refuses the manifest when you pack or
+   publish (`manifest.invalid-browser-permission`, `manifest.forbidden-browser-permission` — see
+   [CHECKS.en.md](CHECKS.en.md)).
+2. **The user consents in the terminal's install window**, which lists the browser permissions next to
+   the other permissions. A new version that adds one asks again, and Nest always sends such a version
+   to a human reviewer — so declare only what a visible feature uses.
+3. **The user can switch each one off** on the widget's row in "My widgets". Switching one off restarts
+   the widget, so an open microphone or camera stream and open file handles end with it.
+4. **Only your widget's own pages hold them.** A request from an iframe of another site is refused,
+   even when the permission is granted.
+
+When a request is refused, your page gets the browser's ordinary `NotAllowedError` — and the terminal
+also says why: one `console.warn` line in the widget's DevTools, a `permissionRefused` event, and a
+line on the widget's row in "My widgets".
+
+```js
+import { on } from "./lib/colibri.js";
+
+on("permissionRefused", (e) => {
+  // e.permission — "camera", "clipboard-read", …; e.reason — see the table below
+  showHint(e.permission, e.reason);
+});
+```
+
+| `reason` | What happened | What to do |
+| --- | --- | --- |
+| `undeclared` | The permission is not in your `browserPermissions` | Declare it |
+| `forbidden` | Widgets never get it | Use the alternative from the table above |
+| `not-granted` | The user has not allowed it yet, or switched it off | Nothing in code — tell the user what the feature needs |
+| `no-user-gesture` | `clipboard-read` was asked outside a click or key handler | Read the clipboard inside the handler |
+| `foreign-origin` | A frame of another site asked | Ask from your own page |
+
+Not on this list, because the browser never shows a permission window for them: reading a file the
+user picks with `<input type="file">` or `showOpenFilePicker`, writing to the clipboard inside a click
+handler, a single download (`<a download>`), and a `paste` event from `Ctrl+V`. Whether the browser
+asks for `autoplay` at all depends on its own autoplay rules — declaring it does no harm when it never
+asks. A terminal released before this list ignores `browserPermissions` and refuses every request:
+your widget still runs there, without the capability.
 
 ## How to pick an architecture
 

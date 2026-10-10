@@ -170,6 +170,20 @@ An `egress` address is malformed. It must be a host (`api.example.com`), a host 
 `minColibriVersion` — the oldest Colibri the widget works on — is not three numbers. Write it like
 `1.4.0`, with no suffix, or leave the field out when any terminal will do.
 
+### `manifest.invalid-browser-permission`
+
+`browserPermissions` holds a name that is not a browser permission, or more than 32 entries. A widget
+may ask for `microphone`, `camera`, `clipboard-read`, `file-read-write` and `autoplay` — see
+[Browser permissions](CAPABILITIES.en.md#browser-permissions). Terminal permissions such as `storage`
+belong in `permissions`, not here.
+
+### `manifest.forbidden-browser-permission`
+
+`browserPermissions` names something widgets never get: `geolocation`, `notifications`, `sensors`,
+`automatic-downloads`, `local-fonts`, `midi-sysex`, `window-management` or `persistent-storage`.
+Remove it. For alerts declare the `notifications` permission in `permissions`; for data that must
+survive a restart, `storage`.
+
 ### `manifest.invalid-icon`
 
 `icon` is there and the icon path is over 256 characters. Better remove the field: the icon is set

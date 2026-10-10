@@ -164,7 +164,22 @@ export declare const stream: {
   onAny(handler: (frame: StreamFrame) => void): () => void;
 };
 
-export type HostEvent = "theme" | "visibility" | "surface" | "bridge" | "grants" | "streamReset";
+export type HostEvent = "theme" | "visibility" | "surface" | "bridge" | "grants" | "streamReset" | "permissionRefused";
+
+/** Why the terminal refused a browser permission request — see CAPABILITIES § Browser permissions. */
+export type PermissionRefusedReason = "forbidden" | "foreign-origin" | "undeclared" | "not-granted" | "no-user-gesture";
+
+/** The `permissionRefused` payload: a browser permission request the terminal refused, and why. */
+export interface PermissionRefusedEvent {
+  type: "colibri:permission-refused";
+  /** The permission's name in the list (`camera`, `clipboard-read`, …), or `unknown`. */
+  permission: string;
+  /** The browser's own number for the permission kind. */
+  kind: number;
+  reason: PermissionRefusedReason;
+  /** The English line the terminal also wrote to this page's console. */
+  message: string;
+}
 
 /** Subscribe to a host event; returns an unsubscribe function. */
 export declare function on(event: HostEvent, handler: (payload: never) => void): () => void;
