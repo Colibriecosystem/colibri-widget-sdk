@@ -170,6 +170,20 @@ Nest (вкладка «Автор»), потом выпустите в него 
 `minColibriVersion` — самая старая версия Colibri, на которой работает виджет, — записан не тремя
 числами. Пишите как `1.4.0`, без суффикса, или уберите поле, если подходит любой терминал.
 
+### `manifest.invalid-browser-permission`
+
+В `browserPermissions` имя, которое не является разрешением браузера, или больше 32 записей. Виджет
+может попросить `microphone`, `camera`, `clipboard-read`, `file-read-write` и `autoplay` — см.
+[Разрешения браузера](CAPABILITIES.md#разрешения-браузера). Права терминала, например `storage`,
+пишутся в `permissions`, а не сюда.
+
+### `manifest.forbidden-browser-permission`
+
+В `browserPermissions` то, что виджет не получает никогда: `geolocation`, `notifications`, `sensors`,
+`automatic-downloads`, `local-fonts`, `midi-sysex`, `window-management` или `persistent-storage`.
+Уберите это. Для оповещений объявите право `notifications` в `permissions`, для данных, которые
+должны пережить перезапуск, — `storage`.
+
 ### `manifest.invalid-icon`
 
 `icon` есть, и путь к иконке длиннее 256 символов. Лучше уберите поле: иконка задаётся у виджета в

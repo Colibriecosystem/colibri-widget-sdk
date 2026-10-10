@@ -328,7 +328,9 @@ export const stream = {
  * Host events: `theme` (palette / language / font scale changed), `visibility`,
  * `surface` (you moved between a slot and a window — the instance is NOT recreated, so this is
  * the only notice you get, and `handshake().surface` is updated before it fires),
- * `bridge` (the API toggle moved), `grants` (your scopes changed), `streamReset`.
+ * `bridge` (the API toggle moved), `grants` (your scopes changed), `streamReset`,
+ * `permissionRefused` (the terminal refused one of your browser permission requests — a
+ * `PermissionRefusedEvent`: `{ permission, kind, reason, message }`; see CAPABILITIES).
  */
 export function on(event, handler) {
   bridge().on(event, handler);

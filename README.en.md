@@ -184,7 +184,9 @@ The hosted-or-bundled fork is laid out in [AUTHORING.en.md](AUTHORING.en.md).
 `id` is a lowercase DNS label, because it is simultaneously your widget's origin
 (`https://<id>.widgets.colibri.internal`) and its folder name. `permissions` is what the user is
 asked to consent to — declare only what you use, since a manifest that grows a permission asks
-again.
+again. What your page may ask the browser for — the microphone, the camera, the clipboard, files —
+is a separate optional list, `browserPermissions`; the allowed names and the rules are in
+[CAPABILITIES.en.md § Browser permissions](CAPABILITIES.en.md#browser-permissions).
 
 The optional `icon` field is an image path **inside the bundle** (a URL is not accepted): the
 terminal renders it everywhere the widget is visible — the catalog card and listing, the
