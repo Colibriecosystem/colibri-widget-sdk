@@ -210,6 +210,39 @@ export const connections = {
 };
 
 /**
+ * Orders through the user's OWN connection — the same path a click in the terminal takes, with
+ * the same per-venue rules and the same order budgets. Every call needs the `trading` scope AND
+ * the user's grant for that connection (Settings → Program → Local API); without the grant it is
+ * refused `403 trading_not_enabled`, and `503 not_ready` means the connection is still warming up.
+ *
+ * A call answers `202` the moment the command is ENQUEUED. The venue's answer arrives on the
+ * `orders` stream (and `positions` for a close), so track the returned `clientOrderId` there —
+ * the reply is not a fill.
+ *
+ * Place an order only because the user asked for it in that moment: never on load, from a timer,
+ * from a stream handler or from a restored setting. `starters/trading` shows the pattern.
+ */
+export const trading = {
+  /**
+   * Place a Limit or Market order. Give exactly one of `sizeQuote` ("spend N USDT") or `sizeBase`
+   * ("N coins"); `price` is required for Limit and must be absent for Market.
+   * @param {string} id connection id
+   * @param {{symbol: string, side: "BUY"|"SELL", type: "Limit"|"Market", price?: string, sizeQuote?: string, sizeBase?: string, reduceOnly?: boolean}} order
+   * @returns {Promise<{clientOrderId: string, status: "accepted"}>}
+   */
+  place: (id, order) => request("POST", `/connections/${encodeURIComponent(id)}/orders`, { body: order }),
+  /** Cancel one order by the `clientOrderId` that `place` returned. `symbol` routes it and is required. */
+  cancel: (id, clientOrderId, symbol) =>
+    request("DELETE", `/connections/${encodeURIComponent(id)}/orders/${encodeURIComponent(clientOrderId)}`, {
+      params: { symbol },
+    }),
+  /** Cancel every working order on the connection: one symbol's with `{symbol}`, EVERY symbol's without. */
+  cancelAll: (id, params) => request("DELETE", `/connections/${encodeURIComponent(id)}/orders`, { params }),
+  /** Close every open position on the connection at market and cancel what is left — the close-all hotkey, one account. */
+  closePositions: (id) => request("DELETE", `/connections/${encodeURIComponent(id)}/positions`),
+};
+
+/**
  * Terminal panels — the workspace as ONE layout tree per tab (api-version 2): a node is
  * `{type:"split", orientation:"row"|"column", share?, children}` or
  * `{type:"slot", id, share?, content}`, and `content` is a union on `kind`
@@ -542,6 +575,7 @@ export default {
   hasScope,
   markets,
   connections,
+  trading,
   panels,
   notifications,
   signalLevels,

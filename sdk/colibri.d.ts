@@ -411,19 +411,148 @@ export declare function hasScope(scope: Scope): boolean;
 export declare const markets: {
   exchanges(): Promise<unknown>;
   symbols(exchange: string): Promise<unknown>;
-  book(exchange: string, symbol: string, params?: RequestOptions["params"]): Promise<unknown>;
+  book(exchange: string, symbol: string, params?: RequestOptions["params"]): Promise<Book>;
   clusters(exchange: string, symbol: string, params?: RequestOptions["params"]): Promise<unknown>;
   funding(exchange: string, symbol: string): Promise<unknown>;
   orderbookSettings(exchange: string): Promise<unknown>;
   patchOrderbookSettings(exchange: string, patch: unknown): Promise<unknown>;
 };
 
+// ── market and account shapes (REST replies and their `/stream` frames are the same shape) ────
+
+/** One book level. Every number on the wire is a decimal STRING — parse it where you do math. */
+export interface BookLevel {
+  price: string;
+  baseQty: string;
+  usdVolume: string;
+}
+
+/** `markets.book()` and the `book` stream frame: asks ascending, bids descending. */
+export interface Book {
+  exchange: string;
+  symbol: string;
+  tickSize: string;
+  /** "0" before the first trade. */
+  lastPrice: string;
+  bestBid: string | null;
+  bestAsk: string | null;
+  bids: BookLevel[];
+  asks: BookLevel[];
+}
+
+/** One print. The `trades` stream sends the prints since its last frame, oldest first. */
+export interface Trade {
+  price: string;
+  /** Base-coin quantity. */
+  qty: string;
+  /** True = the buyer was the aggressor. */
+  isBuy: boolean;
+  /** Exchange time, unix ms. */
+  timeMs: number;
+}
+
+/** The `trades` stream frame. */
+export interface TradesFrame {
+  exchange: string;
+  symbol: string;
+  trades: Trade[];
+}
+
+/** One exchange connection (account). No credentials ever cross the wire. */
+export interface Connection {
+  id: string;
+  /** The venue — the same id `markets.exchanges()` lists. */
+  exchange: string;
+  marketType: string;
+  /** The user's name for it; may be empty. */
+  label: string;
+  /** Demo / testnet trading. */
+  demo: boolean;
+  /** No credentials, or trading switched off — market data only. */
+  viewOnly: boolean;
+  /** The user granted this connection trading through the Local API. Without it `trading.*` answers 403. */
+  apiTradingEnabled: boolean;
+}
+
+export interface Position {
+  symbol: string;
+  exchange: string;
+  /** `LONG` | `SHORT`. */
+  side: string;
+  /** SIGNED base quantity: positive = long. */
+  quantity: string;
+  entryPrice: string;
+}
+
+/** One working order. */
+export interface Order {
+  /** The cancel handle — the id `trading.place` returned. */
+  clientOrderId: string;
+  exchangeOrderId: string | null;
+  symbol: string;
+  exchange: string;
+  /** `BUY` | `SELL`. */
+  side: string;
+  /** `Limit`, `Market`, `StopLoss`, … */
+  type: string;
+  /** `New`, `PartiallyFilled`, … */
+  status: string;
+  price: string;
+  quantity: string;
+  filledQuantity: string;
+}
+
+export interface Balance {
+  asset: string;
+  free: string;
+  locked: string;
+}
+
+/** `connections.positions()` and the `positions` stream frame — the FULL set, every time. */
+export interface PositionsData {
+  connectionId: string;
+  positions: Position[];
+}
+
+/** `connections.orders()` and the `orders` stream frame — the FULL set of working orders, every time. */
+export interface OrdersData {
+  connectionId: string;
+  orders: Order[];
+}
+
+/** `connections.balances()` and the `balance` stream frame — the FULL set, every time. */
+export interface BalanceData {
+  connectionId: string;
+  balances: Balance[];
+}
+
+/** `trading.place`. Exactly one of `sizeQuote` / `sizeBase`; `price` only (and always) for Limit. */
+export interface PlaceOrder {
+  symbol: string;
+  side: "BUY" | "SELL";
+  type: "Limit" | "Market";
+  /** Decimal string. Required for Limit, forbidden for Market. */
+  price?: string;
+  /** Spend this much quote ("100" USDT). */
+  sizeQuote?: string;
+  /** Buy or sell this many coins. */
+  sizeBase?: string;
+  /** Futures: a closing order that never grows the position. */
+  reduceOnly?: boolean;
+}
+
+/** The order was ENQUEUED, not filled: follow `clientOrderId` on the `orders` stream. */
+export interface PlaceOrderAccepted {
+  clientOrderId: string;
+  status: "accepted";
+}
+
 export declare const connections: {
-  list(): Promise<unknown>;
-  get(id: string): Promise<unknown>;
-  positions(id: string): Promise<unknown>;
-  orders(id: string): Promise<unknown>;
-  balances(id: string): Promise<unknown>;
+  list(): Promise<{ connections: Connection[] }>;
+  get(id: string): Promise<Connection>;
+  positions(id: string): Promise<PositionsData>;
+  orders(id: string): Promise<OrdersData>;
+  balances(id: string): Promise<BalanceData>;
   /** Closed-trade history, newest close first. `fromMs`/`toMs` bound the close time, half-open. */
   trades(
     id: string,
@@ -431,6 +560,24 @@ export declare const connections: {
   ): Promise<unknown>;
   /** One closed trade with its individual fills. */
   trade(id: string, tradeId: number | string): Promise<unknown>;
+};
+
+/**
+ * Orders through the user's own connection. Needs the `trading` scope AND the user's grant for that
+ * connection (`403 trading_not_enabled` without it). Every call answers when the command is
+ * ENQUEUED; the venue's answer arrives on the `orders` / `positions` streams.
+ *
+ * Place an order only because the user asked for it in that moment — never on load, from a timer,
+ * from a stream handler or from a restored setting.
+ */
+export declare const trading: {
+  place(id: string, order: PlaceOrder): Promise<PlaceOrderAccepted>;
+  /** Cancel one order. `symbol` routes the cancel and is required. */
+  cancel(id: string, clientOrderId: string, symbol: string): Promise<{ status: "accepted" }>;
+  /** Every working order: one symbol's with `{ symbol }`, EVERY symbol's without. */
+  cancelAll(id: string, params?: { symbol?: string }): Promise<{ status: "accepted" }>;
+  /** Close every position on the connection at market and cancel what is left. */
+  closePositions(id: string): Promise<{ status: "accepted" }>;
 };
 
 export declare const panels: {
@@ -623,6 +770,44 @@ export interface ColibriBridge {
   on(event: HostEvent, handler: (payload: never) => void): void;
   off(event: HostEvent, handler: (payload: never) => void): void;
 }
+
+/** Every permission name, as `widget.json`'s `permissions` takes it. */
+export declare const SCOPES: {
+  readonly marketData: "marketData";
+  readonly accountRead: "account:read";
+  readonly trading: "trading";
+  readonly panels: "panels";
+  readonly notifications: "notifications";
+  readonly signalLevels: "signalLevels";
+  readonly storage: "storage";
+};
+
+/** channel → the scope that unlocks it. */
+export declare const CHANNEL_SCOPES: Readonly<Record<Channel, Scope>>;
+
+/** Everything above as one object: `import colibri from "./colibri.js"`. */
+declare const colibri: {
+  ROUTES: typeof ROUTES;
+  workspace: typeof workspace;
+  CHANNELS: typeof CHANNELS;
+  CHANNEL_SCOPES: typeof CHANNEL_SCOPES;
+  SCOPES: typeof SCOPES;
+  ColibriError: typeof ColibriError;
+  request: typeof request;
+  handshake: typeof handshake;
+  hasScope: typeof hasScope;
+  markets: typeof markets;
+  connections: typeof connections;
+  trading: typeof trading;
+  panels: typeof panels;
+  notifications: typeof notifications;
+  signalLevels: typeof signalLevels;
+  storage: typeof storage;
+  net: typeof net;
+  stream: typeof stream;
+  on: typeof on;
+};
+export default colibri;
 
 declare global {
   interface Window {
