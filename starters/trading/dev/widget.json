@@ -1,0 +1,8 @@
+{
+  "id": "colibri-starter-trading",
+  "version": "1.0.0",
+  "entry": "http://localhost:5174",
+  "surfaces": ["slot", "window"],
+  "permissions": ["marketData", "account:read", "trading", "storage"],
+  "minApiVersion": 1
+}

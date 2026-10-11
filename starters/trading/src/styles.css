@@ -1,0 +1,125 @@
+/* The terminal pushes its palette in as CSS variables before the page runs and keeps them current:
+   the role variables (var(--colibri-role-text) and the rest) make the widget follow the user's theme.
+   The second value is only a
+   fallback for opening the page outside the terminal. */
+:root {
+  color-scheme: dark light;
+}
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: calc(13px * var(--colibri-font-scale, 1));
+  background: var(--colibri-role-background, #0b0e13);
+  color: var(--colibri-role-text, #d8dee9);
+}
+.app {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+select,
+input,
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--colibri-role-surface, #171b23);
+  border: 1px solid var(--colibri-role-divider, #2a2f3a);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+input {
+  width: 8em;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.dim {
+  color: var(--colibri-role-dim-text, #8b93a3);
+  font-size: 0.9em;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.buy {
+  color: var(--colibri-role-bullish, #4caf50);
+}
+.sell {
+  color: var(--colibri-role-bearish, #e05252);
+}
+.live {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: var(--colibri-role-background, #0b0e13);
+  background: var(--colibri-role-bearish, #e05252);
+}
+.demo {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: var(--colibri-role-accent, #4c8dff);
+  border: 1px solid var(--colibri-role-accent, #4c8dff);
+}
+.gate {
+  padding: 6px 8px;
+  border-left: 3px solid var(--colibri-role-accent, #4c8dff);
+  background: var(--colibri-role-surface, #171b23);
+}
+.side-buy {
+  border-color: var(--colibri-role-bullish, #4caf50);
+  color: var(--colibri-role-bullish, #4caf50);
+}
+.side-sell {
+  border-color: var(--colibri-role-bearish, #e05252);
+  color: var(--colibri-role-bearish, #e05252);
+}
+.confirm {
+  padding: 8px;
+  border: 1px solid var(--colibri-role-divider, #2a2f3a);
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+}
+.confirm .actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.notice-ok {
+  color: var(--colibri-role-bullish, #4caf50);
+}
+.notice-error {
+  color: var(--colibri-role-bearish, #e05252);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--colibri-role-dim-text, #8b93a3);
+  font-size: 0.85em;
+}
+td,
+th {
+  padding: 2px 6px 2px 0;
+}
+h2 {
+  margin: 4px 0;
+  font-size: 0.95em;
+  font-weight: 600;
+}
