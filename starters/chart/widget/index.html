@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Colibri chart</title>
+    <style>
+      /* The terminal's palette arrives as CSS variables; chart.js reads the same ones for the canvas. */
+      :root { color-scheme: dark light; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-size: calc(12px * var(--colibri-font-scale, 1));
+        background: var(--colibri-role-background, #0b0e13);
+        color: var(--colibri-role-text, #d8dee9);
+      }
+      .bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 8px; }
+      select, input, button {
+        font: inherit;
+        color: inherit;
+        background: var(--colibri-role-surface, #171b23);
+        border: 1px solid var(--colibri-role-divider, #2a2f3a);
+        border-radius: 4px;
+        padding: 3px 7px;
+      }
+      input { width: 8em; text-transform: uppercase; }
+      button { cursor: pointer; }
+      button[aria-pressed="true"] { border-color: var(--colibri-role-accent, #4c8dff); color: var(--colibri-role-accent, #4c8dff); }
+      .dim { color: var(--colibri-role-dim-text, #8b93a3); }
+      #readout { padding: 0 8px 4px; font-variant-numeric: tabular-nums; min-height: 1.4em; }
+      canvas { flex: 1; min-height: 0; width: 100%; display: block; cursor: crosshair; }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <select id="exchange"></select>
+      <input id="symbol" spellcheck="false" autocomplete="off" />
+      <span id="timeframes"></span>
+      <span class="dim" id="note"></span>
+    </div>
+    <div id="readout" class="dim"></div>
+    <canvas id="chart"></canvas>
+
+    <script type="module">
+      // The page: what to show and where the data comes from. The drawing is in chart.js.
+      import { handshake, markets, on, storage, stream } from "./colibri.js";
+      import { createChart } from "./chart.js";
+
+      const TEXT = {
+        ru: { note: "история — с момента открытия", failed: "Нет данных: {0}", bridgeOff: "API для виджетов выключен: Настройки → Виджеты." },
+        en: { note: "history starts when the chart opens", failed: "No data: {0}", bridgeOff: "The widget API is off: Settings → Widgets." },
+      };
+      let lang = handshake().lang === "ru" ? "ru" : "en";
+      const t = (key, ...args) => TEXT[lang][key].replace(/\{(\d)\}/g, (_, i) => String(args[i]));
+
+      const TIMEFRAMES = [1, 5, 15, 60];
+      const $ = (id) => document.getElementById(id);
+      const exchangeEl = $("exchange");
+      const symbolEl = $("symbol");
+      const note = (text) => ($("note").textContent = text || t("note"));
+      const chart = createChart($("chart"), $("readout"));
+
+      // The market and timeframe survive a restart; storage is per widget instance.
+      const saved = JSON.parse((await storage.get("chart").catch(() => null)) || "null");
+      let state = saved || { exchange: "BinanceSpot", symbol: "BTCUSDT", timeframe: 1 };
+
+      try {
+        const { exchanges } = await markets.exchanges();
+        for (const venue of exchanges) exchangeEl.add(new Option(venue.name, venue.id));
+      } catch (e) {
+        note(t("failed", e.code || e.message));
+      }
+      if (![...exchangeEl.options].some((o) => o.value === state.exchange)) {
+        exchangeEl.add(new Option(state.exchange, state.exchange));
+      }
+      exchangeEl.value = state.exchange;
+      symbolEl.value = state.symbol;
+
+      for (const seconds of TIMEFRAMES) {
+        const button = document.createElement("button");
+        button.textContent = seconds < 60 ? `${seconds}s` : `${seconds / 60}m`;
+        button.dataset.seconds = String(seconds);
+        button.addEventListener("click", () => {
+          state.timeframe = seconds;
+          save();
+          paintTimeframe();
+        });
+        $("timeframes").append(button);
+      }
+      function paintTimeframe() {
+        for (const b of $("timeframes").children) b.setAttribute("aria-pressed", String(Number(b.dataset.seconds) === state.timeframe));
+        chart.setTimeframe(state.timeframe);
+      }
+
+      const save = () => storage.set("chart", JSON.stringify(state)).catch(() => {});
+
+      // Two streams per market: the prints build the candles, the top of the book draws bid and ask.
+      let stops = [];
+      function follow() {
+        for (const stop of stops) stop();
+        chart.clear();
+        note();
+        const { exchange, symbol } = state;
+        markets
+          .book(exchange, symbol, { depth: 1 })
+          .then((book) => {
+            chart.setTickSize(book.tickSize);
+            chart.setQuote(book.bestBid, book.bestAsk);
+          })
+          .catch((e) => note(t("failed", e.code || e.message)));
+        stops = [
+          stream.subscribe("trades", { exchange, symbol }, (frame) => chart.addTrades(frame.trades)),
+          stream.subscribe("book", { exchange, symbol, depth: 1, hz: 2 }, (book) => chart.setQuote(book.bestBid, book.bestAsk)),
+        ];
+      }
+
+      function choose() {
+        const symbol = symbolEl.value.trim().toUpperCase();
+        if (!symbol) return;
+        state = { ...state, exchange: exchangeEl.value, symbol };
+        save();
+        follow();
+      }
+      exchangeEl.addEventListener("change", choose);
+      symbolEl.addEventListener("change", choose);
+
+      on("theme", (e) => {
+        lang = e.lang === "ru" ? "ru" : "en";
+        note();
+        chart.restyle();
+      });
+      // Hidden in a background tab: keep collecting prints, stop drawing.
+      on("visibility", (e) => chart.setVisible(e.visible !== false));
+      on("bridge", (e) => note(e.enabled ? "" : t("bridgeOff")));
+
+      paintTimeframe();
+      follow();
+    </script>
+  </body>
+</html>

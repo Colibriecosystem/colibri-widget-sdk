@@ -1,0 +1,8 @@
+{
+  "id": "colibri-starter-chart",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "surfaces": ["slot", "window"],
+  "permissions": ["marketData", "storage"],
+  "minApiVersion": 1
+}
