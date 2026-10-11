@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Colibri widget</title>
+    <style>
+      /* The terminal pushes its palette in as CSS variables before this page runs and keeps them
+         current, so the role variables (var(--colibri-role-text) and the rest) make the widget follow the
+         user's theme with no code.
+         The second value is only a fallback for opening the file outside the terminal. */
+      :root { color-scheme: dark light; }
+      body {
+        margin: 0;
+        padding: 12px;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-size: calc(13px * var(--colibri-font-scale, 1));
+        background: var(--colibri-role-background, #0b0e13);
+        color: var(--colibri-role-text, #d8dee9);
+      }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      select, input {
+        font: inherit;
+        color: inherit;
+        background: var(--colibri-role-surface, #171b23);
+        border: 1px solid var(--colibri-role-divider, #2a2f3a);
+        border-radius: 4px;
+        padding: 4px 8px;
+      }
+      input { width: 9em; text-transform: uppercase; }
+      .quote {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 12px;
+        margin-top: 12px;
+        font-size: 1.15em;
+        font-variant-numeric: tabular-nums;
+      }
+      .label { align-self: center; font-size: 0.8em; color: var(--colibri-role-dim-text, #8b93a3); }
+      .bid, .buy { color: var(--colibri-role-bullish, #4caf50); }
+      .ask, .sell { color: var(--colibri-role-bearish, #e05252); }
+      #status { margin-top: 12px; font-size: 0.85em; color: var(--colibri-role-dim-text, #8b93a3); }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <select id="exchange"></select>
+      <input id="symbol" spellcheck="false" autocomplete="off" />
+    </div>
+    <div class="quote">
+      <span class="label" data-t="bid"></span><span id="bid" class="bid">—</span>
+      <span class="label" data-t="ask"></span><span id="ask" class="ask">—</span>
+      <span class="label" data-t="last"></span><span id="last">—</span>
+    </div>
+    <div id="status"></div>
+
+    <script type="module">
+      // The whole widget is this file. Edit it and save: the terminal reloads the widget by itself.
+      // Every call goes through colibri.js beside it — VS Code reads its types from colibri.d.ts.
+      import { handshake, markets, on, storage, stream } from "./colibri.js";
+
+      // On-screen text, in the terminal's language. Add a key to both tables.
+      const TEXT = {
+        ru: {
+          bid: "Бид",
+          ask: "Аск",
+          last: "Сделка",
+          bridgeOff: "API для виджетов выключен: Настройки → Виджеты.",
+          failed: "Нет данных: {0}",
+        },
+        en: {
+          bid: "Bid",
+          ask: "Ask",
+          last: "Last",
+          bridgeOff: "The widget API is off: Settings → Widgets.",
+          failed: "No data: {0}",
+        },
+      };
+      let lang = handshake().lang === "ru" ? "ru" : "en";
+      const t = (key, ...args) => TEXT[lang][key].replace(/\{(\d)\}/g, (_, i) => String(args[i]));
+
+      const $ = (id) => document.getElementById(id);
+      const exchangeEl = $("exchange");
+      const symbolEl = $("symbol");
+      const say = (text) => ($("status").textContent = text);
+
+      function paintLabels() {
+        for (const el of document.querySelectorAll("[data-t]")) el.textContent = t(el.dataset.t);
+      }
+
+      // What to watch survives a restart: storage is per widget instance and kept by the terminal.
+      // In-memory state does not survive the reload that every save triggers.
+      const saved = JSON.parse((await storage.get("market").catch(() => null)) || "null");
+      let market = saved || { exchange: "BinanceSpot", symbol: "BTCUSDT" };
+
+      // The venues the terminal knows. A failure here still leaves the saved one selectable.
+      try {
+        const { exchanges } = await markets.exchanges();
+        for (const venue of exchanges) exchangeEl.add(new Option(venue.name, venue.id));
+      } catch (e) {
+        say(t("failed", e.code || e.message));
+      }
+      if (![...exchangeEl.options].some((o) => o.value === market.exchange)) {
+        exchangeEl.add(new Option(market.exchange, market.exchange));
+      }
+      exchangeEl.value = market.exchange;
+      symbolEl.value = market.symbol;
+
+      // Follow one market: a REST read for an immediate paint, then the live streams. Polling a
+      // route in a loop is what the terminal's rate limit exists to stop.
+      let stops = [];
+      function follow() {
+        for (const stop of stops) stop();
+        $("bid").textContent = $("ask").textContent = $("last").textContent = "—";
+        say("");
+        const { exchange, symbol } = market;
+
+        markets
+          .book(exchange, symbol, { depth: 1 })
+          .then((book) => paintBook(book))
+          .catch((e) => say(t("failed", e.code || e.message)));
+
+        stops = [
+          // `hz` caps the snapshot rate: 4 a second is plenty for a quote and costs little.
+          stream.subscribe("book", { exchange, symbol, depth: 1, hz: 4 }, (book) => paintBook(book)),
+          // Trades arrive in batches, oldest first; the last one is the latest print.
+          stream.subscribe("trades", { exchange, symbol }, (frame) => {
+            const print = frame.trades[frame.trades.length - 1];
+            if (!print) return;
+            $("last").textContent = print.price;
+            $("last").className = print.isBuy ? "buy" : "sell";
+          }),
+        ];
+      }
+
+      function paintBook(book) {
+        $("bid").textContent = book.bestBid ?? "—";
+        $("ask").textContent = book.bestAsk ?? "—";
+      }
+
+      async function choose() {
+        market = { exchange: exchangeEl.value, symbol: symbolEl.value.trim().toUpperCase() };
+        if (!market.symbol) return;
+        await storage.set("market", JSON.stringify(market)).catch(() => {});
+        follow();
+      }
+      exchangeEl.addEventListener("change", choose);
+      symbolEl.addEventListener("change", choose);
+
+      // Host events. The language arrives with `theme`; the bridge toggle is the one worth showing,
+      // because the widget keeps running while the API is off — it just cannot call.
+      on("theme", (e) => {
+        lang = e.lang === "ru" ? "ru" : "en";
+        paintLabels();
+      });
+      on("bridge", (e) => say(e.enabled ? "" : t("bridgeOff")));
+
+      paintLabels();
+      follow();
+    </script>
+  </body>
+</html>
