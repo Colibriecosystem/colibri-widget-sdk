@@ -1,0 +1,80 @@
+name: starters
+
+# The starters a terminal creates a widget project from. Every PR checks them; a `starters-*` tag
+# publishes them as the release terminals read (releases/latest/download/starters.json).
+#
+# The contract — what starters.json holds, why the terminal builds each zip's address itself, why
+# the format only grows — is starters/README.md.
+
+on:
+  push:
+    branches: [main]
+    tags: ["starters-*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Every colibri.js copy is the SDK's own
+        run: node scripts/sync-sdk-copies.mjs --check
+
+      - name: The starters' sources
+        run: node scripts/starters.mjs check
+
+      - name: The scripts' own tests
+        run: node --test scripts/starters.test.mjs
+
+      - name: Build the Vite starters (npm ci, typecheck, build)
+        run: node scripts/starters.mjs build
+
+      - name: Pack
+        run: node scripts/starters.mjs pack --release "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.sha) }}" --out out
+
+      - name: Re-read the packed release as a terminal would
+        run: node scripts/starters.mjs verify out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starters
+          path: out/
+
+  publish:
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'starters-')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: starters
+          path: out
+
+      # A draft is never `latest`, so terminals cannot see an index whose zips are still uploading.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" out/starters.json out/starter-*.zip --draft --title "Starters $TAG" --notes-file out/NOTES.md
+          gh release edit "$TAG" --draft=false --latest
+
+      - name: What a terminal downloads is what was built
+        run: node scripts/starters.mjs smoke --repo "${{ github.repository }}" --release "${{ github.ref_name }}"

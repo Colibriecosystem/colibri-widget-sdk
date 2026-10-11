@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "starters": [
+    {
+      "key": "plain",
+      "title": { "ru": "Простой", "en": "Plain" },
+      "description": {
+        "ru": "Одна HTML-страница без сборки: живая цена из стакана и сохранённая настройка.",
+        "en": "One HTML page, no build: a live price from the book and a saved setting."
+      },
+      "path": "starters/plain",
+      "build": null,
+      "serve": "widget",
+      "manifests": ["widget/widget.json"],
+      "packageJson": null,
+      "edit": "widget/index.html"
+    },
+    {
+      "key": "react",
+      "title": { "ru": "TypeScript + React", "en": "TypeScript + React" },
+      "description": {
+        "ru": "Vite, TypeScript и React с типами API. Готовая сборка работает сразу; править — с Node.js.",
+        "en": "Vite, TypeScript and React with a typed API. The ready build runs at once; editing needs Node.js."
+      },
+      "path": "starters/react",
+      "build": "vite",
+      "serve": "dist",
+      "manifests": ["public/widget.json", "dev/widget.json", "dist/widget.json"],
+      "packageJson": "package.json",
+      "edit": "src/App.tsx"
+    },
+    {
+      "key": "trading",
+      "title": { "ru": "Торговый", "en": "Trading" },
+      "description": {
+        "ru": "Счёт подключения вживую и лимитная заявка — только по подтверждённому клику.",
+        "en": "A connection's account, live, and a limit order only on a confirmed click."
+      },
+      "path": "starters/trading",
+      "build": "vite",
+      "serve": "dist",
+      "manifests": ["public/widget.json", "dev/widget.json", "dist/widget.json"],
+      "packageJson": "package.json",
+      "edit": "src/App.tsx"
+    },
+    {
+      "key": "chart",
+      "title": { "ru": "График", "en": "Chart" },
+      "description": {
+        "ru": "Свечи из живых сделок на canvas, без сторонних библиотек и без сборки.",
+        "en": "Candles from live trades on a canvas, no third-party libraries and no build."
+      },
+      "path": "starters/chart",
+      "build": null,
+      "serve": "widget",
+      "manifests": ["widget/widget.json"],
+      "packageJson": null,
+      "edit": "widget/chart.js"
+    }
+  ]
+}
