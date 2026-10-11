@@ -1,13 +1,17 @@
 {
-  "name": "colibri-widget-template",
+  "name": "colibri-starter-react",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Starter for a Colibri terminal widget — TypeScript + React, no framework lock-in.",
+  "description": "A Colibri widget starter — TypeScript + React + Vite.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "watch": "vite build --watch",
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",
