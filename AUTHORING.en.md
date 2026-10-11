@@ -69,8 +69,9 @@ my-widget/
 ```
 
 `id` doubles as the install folder name and the virtual-host label, so it is strictly a lowercase
-DNS label (`a–z`, `0–9`, hyphens). `entry` is a path inside the folder. A full starter project
-(TS + React, no framework lock-in) lives in [`template/`](template/).
+DNS label (`a–z`, `0–9`, hyphens). `entry` is a path inside the folder. Ready projects — plain,
+TypeScript + React, trading and chart — live in [`starters/`](starters/); the terminal creates a
+widget from any of them itself: Code → From a template.
 
 There is no name, icon or author in `widget.json` — they live on the widget itself, in Nest. You set
 the name and the icon on the terminal's Author tab → your widget → its listing; the byline is the
@@ -236,5 +237,5 @@ down: [policies/TAKEDOWN.en.md](policies/TAKEDOWN.en.md).
 - [CAPABILITIES.en.md](CAPABILITIES.en.md) — the widget environment: what works, what doesn't,
   and how to pick an architecture (read before designing).
 - [README.en.md](README.en.md) — the `window.colibri` SDK: routes, channels, `colibri.net.fetch`.
-- [`template/`](template/) — the starter project.
+- [`starters/`](starters/) — the four starters the terminal creates a project from.
 - [`examples/`](examples/) — the terminal's two reference widgets with committed `dist/` builds.
