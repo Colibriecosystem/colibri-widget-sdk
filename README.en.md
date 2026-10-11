@@ -257,4 +257,4 @@ A manifest whose `entry` is a dev server cannot be packed: there is nothing to d
 - Route and stream wire shapes: `docs/functionality/16-local-api-and-widgets.md`
 - The widget platform (manifest, install, lifecycle, bridge): `docs/functionality/18-widget-platform.md`
 - A working widget: [`sample-widget/`](sample-widget)
-- A starter project (TypeScript + React, no framework lock-in): the `template/` folder of the public SDK repository
+- Starters — plain, TypeScript + React, trading and chart: the `starters/` folder of the public SDK repository; the terminal creates a project from them itself (Nest → Author → Code → From a template)
