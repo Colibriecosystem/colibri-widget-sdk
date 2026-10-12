@@ -1,260 +1,68 @@
-# @colibri-terminal/sdk
+# Colibri widget SDK
 
-> Русская версия — [README.md](README.md), она же основная.
->
-> The author's path — three stages, from a folder to the catalog: [AUTHORING.en.md](AUTHORING.en.md).
->
-> Publication and revocation rules: [policies/](policies/).
+> Русская версия — [README.md](README.md).
 
-The typed client for the Colibri widget API. A widget is a web page the terminal hosts in an
-embedded WebView; this package is the ergonomic way to talk to the terminal from inside it.
+A Colibri widget is a web page the terminal opens in a panel or in a window of its own, and gives
+its API: market data, the user's accounts and orders through their connections, the layout,
+notifications, price alerts, the theme and the language. Users install widgets from the Nest
+catalog and decide for themselves which permissions to grant. This repository holds everything an
+author needs: the SDK, the four starters the terminal creates a project from, two reference
+widgets, the documentation and the publishing rules.
 
-## The one thing to understand first
+## <a id="path"></a>The author's path
 
-The terminal injects a raw tunnel at `window.colibri` **before any of your page's code runs** —
-this SDK is *sugar over that object*, never a second contract. Everything here is optional: a
-widget that prefers `window.colibri.request("GET", "/exchanges")` is equally supported and will
-never fall behind, because both go through the same route table.
+1. [Your first widget](docs/getting-started.en.md) — from the Author tab in Nest to the first
+   version in the catalog.
+2. [API reference](docs/reference/README.en.md) — every call, channel and event: what it takes,
+   what it returns, the scope it needs and how it refuses.
+3. [Recipes](docs/recipes.en.md) — the order book, the trade tape, the account, a safe order, the
+   theme, the language, settings, data from other venues.
+4. [Publishing](docs/publishing.en.md) — the author and their key, the listing, releasing a version, review,
+   access and stats.
 
-That table is not copied by hand: [`ROUTES`](colibri.js) is compared against the terminal's live
-routes by a unit test in the terminal itself, so this SDK cannot silently drift from the API it
-wraps.
+At hand:
 
-## Where market data comes from (read this before building a screener)
+- [`starters/`](starters/) — four starters: Plain, TypeScript + React, Trading and Chart. The
+  terminal creates a project from them itself.
+- [CAPABILITIES.en.md](CAPABILITIES.en.md) — the widget's environment: what works, what does not,
+  and how to pick an architecture. Read it before you design.
+- [CHECKS.en.md](CHECKS.en.md) — Nest's checks: what each refusal code means and how to fix it.
+- [`policies/`](policies/) — what may be published, and what happens when a widget is taken down.
+- [`examples/`](examples/) — two reference widgets with their sources: Funding monitor and
+  Liquidation radar.
 
-**Your widget owns its market data.** The terminal's `markets.*` routes serve what the TERMINAL
-has open — a symbol is held because a panel or a caller pinned it, and released when it goes
-idle — so they are panel-coupled by construction and cannot answer a whole-venue scan. They are
-fully supported for what they are (the book the user is already watching, the venue catalog,
-cluster history), and a widget is welcome to use them. They are simply never the thing your
-widget's core function should rest on.
+## <a id="example"></a>What it looks like
 
-For scanning, screening, or any data the terminal does not already have open, connect to the
-venue yourself: list the hosts in your manifest's `egress` allowlist and open your own venue
-WebSockets. They work from a page context already — and only to hosts on that list: the terminal
-serves your document with a `Content-Security-Policy: connect-src` built from it, so a socket to
-an undeclared host throws a `SecurityError` at construction (the terminal counts and logs the
-blocked host in its F12 report, which is where to look when a stream "silently" never opens). A
-host declared without a port covers any port; `ws.okx.com:8443` covers only 8443. For venue REST
-endpoints that ship no CORS headers the host fulfills the request for you, so CORS is not your
-problem either.
-
-What only the terminal has — and therefore what this SDK is really for — is your accounts:
-connections, positions, orders, balances, closed-trade history, trading through your keys, plus
-panels, notifications and price alerts.
-
-## Install
-
-No build step and no dependencies. Either vendor the two files next to your page:
-
-```html
-<script type="module">
-  import colibri from "./colibri.js";
-</script>
-```
-
-…or, once published, `npm i @colibri-terminal/sdk`.
-
-## Use
+The order book: a snapshot for the first paint, then live updates. `colibri.js` sits beside the
+page — every starter already carries a copy.
 
 ```js
-import colibri, { markets, panels, notifications, storage, stream, on } from "./colibri.js";
+import { handshake, markets, stream } from "./colibri.js";
 
-// Who am I, and what may I do? Available synchronously — no await, no ready event.
-const { widgetId, instanceId, surface, theme, grantedScopes } = colibri.handshake();
+const exchange = "BinanceSpot";
+const symbol = "BTCUSDT";
 
-// Read terminal state.
-const venues = await markets.exchanges();
-const book = await markets.book("BinanceSpot", "BTCUSDT", { depth: 20 });
+// Who am I and what may I do — known at once, with no await and no ready event.
+const { widgetId, grantedScopes } = handshake();
+console.log(widgetId, grantedScopes);
 
-// Act on the terminal.
-await panels.add({ content: { kind: "orderbook", exchange: "BinanceSpot", symbol: "ETHUSDT" }, activate: true });
-// Where am I, and what is beside me? No user setup — the terminal tells a widget its own slot.
-const { siblings, index } = await panels.siblings();
-const bookNextToMe = siblings.find((s) => s.type === "slot" && s.content.kind === "orderbook");
-await notifications.raise({ message: "Spread widened past 4 bps", severity: "warning" });
-
-// Live data. Returns an unsubscribe function; re-subscribes itself if the bridge is toggled.
-const stop = stream.subscribe("trades", { exchange: "BinanceSpot", symbol: "BTCUSDT" }, (data) => {
-  for (const t of data.trades) console.log(t.price, t.qty, t.isBuy);
+// A snapshot, then live snapshots at most 4 a second. Prices and sizes arrive as strings.
+const book = await markets.book(exchange, symbol, { depth: 10 });
+console.log(book.bestBid, book.bestAsk);
+const stop = stream.subscribe("book", { exchange, symbol, depth: 10, hz: 4 }, (live) => {
+  console.log(live.bestBid, live.bestAsk);
 });
-
-// Durable per-instance state — survives restarts, wiped when the widget is uninstalled.
-await storage.set("layout", JSON.stringify({ sort: "volume" }));
-
-// The terminal's theme is applied to your page automatically (CSS custom properties); listen
-// only if you also need to react in code.
-on("theme", (e) => console.log("theme is now", e.theme));
 ```
 
-### Errors
+What can go wrong here, and how to survive it, is in the [order-book recipe](docs/recipes.en.md#order-book).
 
-Calls resolve with the response body on success and **reject** with a `ColibriError` otherwise, so
-a forgotten check cannot pass a failure off as data. Switch on `code`, never on `message`:
+## <a id="layout"></a>What lives where
 
-```js
-try {
-  await notifications.raise({ message: "" });
-} catch (e) {
-  if (e.code === "bridge_disabled") { /* the user turned the API bridge off in Nest */ }
-  else if (e.code === "bad_request") { /* your payload */ }
-}
-```
-
-`bridge_disabled` (503) is worth handling explicitly: the user can switch the API bridge off in
-**Nest → Settings**, which leaves your widget *running* but API-blind. You also get a `bridge`
-event on both edges, so you can show a degraded state and recover without a reload.
-
-Three more your widget can meet, all of them about limits the user set rather than bugs in your
-payload:
-
-- `unauthorized` (401) — the route needs a scope your widget was not granted. Declare it in the
-  manifest and it becomes part of what the user is asked to consent to.
-- `rate_limited` (429) — too many calls in the last minute. Back off and retry; if you are
-  polling for live data, subscribe to a stream instead, which is what streams are for.
-- `budget_exceeded` (403) — an order was within its granted connection but over the per-order or
-  per-minute budget the user set for your widget. Surface it to the user; do not retry in a loop.
-
-## Styling
-
-The host pushes its palette into your page as CSS custom properties (`--colibri-background`,
-`--colibri-buy`, …) plus `data-theme` and `data-colibri-lang` on `<html>`, and re-pushes them
-whenever the user changes theme, colours, font size or language. Use the variables and your widget
-looks native with zero code.
-
-## Versioning
-
-`apiVersion` is additive within a major: new routes and new optional fields do not bump it. Declare
-the minimum you need in your `widget.json` as `minApiVersion` — the terminal refuses to start a
-widget that needs a newer API rather than failing halfway through its first call. This package's
-semver major tracks `apiVersion`.
-
-**Response shapes** are versioned separately, per request: every call this SDK makes carries
-`API_VERSION` (2) — the terminal reads it from the bridge envelope, and over plain HTTP it is the
-`api-version` header. Today only `/app/panels` has two shapes (v2 = one discriminated `layout` tree
-per tab; the older flat `slots` + `tree` is v1, what an unversioned request gets). A terminal that
-predates v2 ignores the field and answers v1, so this SDK needs a terminal that serves v2 — check
-`supportedApiVersions` on `GET /ping`. **From terminal 1.4.0 v1 is removed and the header is
-ignored**; nothing changes for a client already on v2.
-
-### A widget's version number and compatibility
-
-- `version` is three numbers `X.Y.Z` with no leading zeros and no suffix: `1.2.3`, not `v1.2.3`, `1.2`
-  or `1.2.3-beta.1`. Nest has no pre-release channel: every approved version reaches every user.
-- Numbers only grow and never repeat. A new version must be above every version the widget ever had:
-  approved, waiting for review, declined by a moderator, and withdrawn by you. The only number that
-  stays free is one whose archive failed the automatic checks — that version was never stored. A
-  rollback to an earlier version is a new, higher number too.
-- Which part to raise: `Z` for a fix; `Y` for new features with nothing for the user to do; `X` when
-  the user has to act — agree to new permissions or hosts, update Colibri, or set the widget up again.
-  The terminal's release wizard suggests `X` in those cases.
-- `minColibriVersion` is optional: the oldest terminal the widget works on, as three numbers
-  (`"minColibriVersion": "1.4.0"`). Terminals newer than 1.3.1 do not install, offer as an update, or
-  start a version that needs a newer Colibri: the user sees "Requires Colibri 1.4.0 or newer", and the
-  version they already have keeps working. Terminals 1.3.1 and older do not read the field. A
-  pre-release terminal build (`1.4.0-beta.2`) counts as `1.4.0`.
-- `minApiVersion` is something else: the version of the `window.colibri` contract, which grows only
-  with a breaking API change. If your widget needs a feature from Colibri 1.4, use
-  `minColibriVersion`.
-
-The registry's refusals for a number, and their codes, are in [CHECKS.en.md](CHECKS.en.md).
-
-## Building a widget
-
-A widget is a folder holding a `widget.json` and whatever your build produces. There is no SDK
-install step and no toolchain the terminal cares about — if it emits HTML, it can be a widget.
-
-If your app **already works at its own https address**, the folder can be a single `widget.json`
-whose `entry` is that address: that is a hosted widget, and it needs neither a build nor a pack.
-The hosted-or-bundled fork is laid out in [AUTHORING.en.md](AUTHORING.en.md).
-
-```json
-{
-  "id": "my-widget",
-  "version": "1.0.0",
-  "entry": "index.html",
-  "surfaces": ["slot"],
-  "permissions": ["marketData"],
-  "minApiVersion": 1
-}
-```
-
-`id` is a lowercase DNS label, because it is simultaneously your widget's origin
-(`https://<id>.widgets.colibri.internal`) and its folder name. `permissions` is what the user is
-asked to consent to — declare only what you use, since a manifest that grows a permission asks
-again. What your page may ask the browser for — the microphone, the camera, the clipboard, files —
-is a separate optional list, `browserPermissions`; the allowed names and the rules are in
-[CAPABILITIES.en.md § Browser permissions](CAPABILITIES.en.md#browser-permissions).
-
-And on `surfaces`: only a widget that declares `"window"` can be opened as a standalone window and
-pinned to the bottom bookmark strip — a slot-only widget lives in panels exclusively.
-
-Then, in the terminal: **Nest → "My widgets" → "Add widget…" → the Development card → "Load unpacked…"** and pick
-that folder. The terminal serves it **in place** — nothing is copied — so the folder you keep
-editing is the folder the widget runs from. Place it with the 🧩 button on an empty panel.
-
-### Name, icon and author
-
-They are not in `widget.json`: a widget's name, icon and author live on the widget itself, in Nest.
-You set the name and the icon on the terminal's Author tab → your widget → its listing; the byline
-is the name in your author profile. The terminal shows the icon everywhere the widget is visible,
-and the 🧩 glyph without one. A PNG (JPEG and WEBP work too, SVG does not) up to 512 KB will do; a
-square 128×128 on a transparent background is best.
-
-A `widget.json` that still has these fields keeps working: Nest does not refuse such a version, it
-marks it with the informational [`manifest.legacy-fields`](CHECKS.en.md#manifestlegacy-fields),
-which does not stop automatic approval. The terminal's "Remove from widget.json" button takes them
-out for you. The exception is Colibri 1.3.2 or older: without `name` those releases neither load
-the folder nor install a version, so while you or your users are on one, keep `name`.
-
-### The edit-save-see loop
-
-Watch is on by default. Save a file and the widget reloads itself, typically in well under a
-second. Point the loader at your build OUTPUT (`dist/`), not your source tree: a bundle is capped
-at 2000 files and 50 MB, and a `node_modules` tree blows through both — the refusal will say
-which cap it hit.
-
-With a bundler, `vite build --watch` (or your equivalent) is the whole loop: it rewrites `dist/`
-on every save and the terminal picks it up. Make sure your `widget.json` is copied into the output
-— in Vite, putting it in `public/` does that.
-
-If you would rather use HMR, you can: set `entry` to `http://localhost:5173` and the terminal
-loads your dev server directly. That form is accepted **only** for an unpacked widget, and only
-for literal `localhost` / `127.0.0.1` — it is a development affordance, not a distributable
-manifest. The same `connect-src` applies to a dev-served page, with your dev origin spelled out as
-`'self'` including its port — so Vite's HMR socket on the entry's own port just works, while an
-HMR socket moved to a different port (`server.hmr.port`) would be refused; keep it on the entry's
-port.
-
-`DevTools` on the widget's row (or in the widget's ⚙ menu) opens Chromium DevTools against your
-page: console, network, elements, the usual. For an installed widget the affordance is off unless
-you turn on «Инструменты разработчика для установленных виджетов».
-
-### Surviving a reload
-
-A reload re-navigates the page, so in-memory state is gone. `storage` is the durable half — it is
-per widget-instance, survives restarts and updates, and is wiped when the widget is uninstalled.
-Keep anything the user would be annoyed to re-enter there.
-
-## Packaging
-
-«Упаковать для «Гнезда»» turns the folder into a `.zip` plus the **content hash** a listing pins.
-
-The contract is over the **extracted content, never the zip bytes**: extract the archive to a
-directory, hash it, and you must get the same value. That is deliberate — it means the hash you
-submit is reproducible on any machine with any zip tool, because timestamps, entry order and
-compression level cannot affect it.
-
-The hash is SHA-256 over, for each file in ordinal path order,
-`UTF-8(relative path) ‖ 0x00 ‖ int64-LE(length) ‖ SHA-256(bytes)`. Paths use forward slashes,
-empty directories contribute nothing, and symlinks are refused outright — a link could otherwise
-smuggle content from outside the folder past the pin, which also means an extractor must never
-materialize one.
-
-A manifest whose `entry` is a dev server cannot be packed: there is nothing to distribute.
-## Reference
-
-- Route and stream wire shapes: `docs/functionality/16-local-api-and-widgets.md`
-- The widget platform (manifest, install, lifecycle, bridge): `docs/functionality/18-widget-platform.md`
-- A working widget: [`sample-widget/`](sample-widget)
-- Starters — plain, TypeScript + React, trading and chart: the `starters/` folder of the public SDK repository; the terminal creates a project from them itself (Nest → Author → Code → From a template)
+| Folder | What it holds |
+| --- | --- |
+| [`sdk/`](sdk/) | the SDK — `colibri.js` and its types `colibri.d.ts`: two files you put beside your page |
+| [`starters/`](starters/) | the starters; every release of this repository is a starters release, and terminals take them from it |
+| [`examples/`](examples/) | the reference widgets: sources and built `dist/` |
+| [`docs/`](docs/) | the author docs: first widget, reference, recipes, publishing |
+| [`policies/`](policies/) | the Nest catalog's rules: what may be published, how a widget is taken down |
+| [`scripts/`](scripts/) | the repository's checks: docs, starters, SDK copies |

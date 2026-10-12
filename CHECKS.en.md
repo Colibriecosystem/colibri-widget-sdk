@@ -32,8 +32,8 @@ test data. The archive holds the built widget only.
 
 ### `archive.zip-unreadable`
 
-The file does not open as a zip, or it is damaged. Pack it again with "Pack for Nest" — it builds the
-archive exactly the way Nest checks it.
+The file does not open as a zip, or it is damaged. Release the version again from the Author tab — the
+wizard builds the archive exactly the way Nest checks it.
 
 ### `archive.unsafe-entry-path`
 
@@ -72,7 +72,8 @@ There is no `widget.json` at the archive's root. It must sit at the root, not in
 
 ### `manifest.missing-id`
 
-There is no `id`. The terminal writes the id Nest issued when you link the folder to the widget.
+There is no `id`. Put your widget's ID into `widget.json` — the one it was created under on the
+Author tab. The terminal writes an ID itself only into a project it created from a starter.
 
 ### `manifest.invalid-id`
 
@@ -82,8 +83,9 @@ or ending with a hyphen.
 ### `manifest.id-mismatch`
 
 The archive names a different widget than the one the version was sent to. Nest takes a version
-only into the widget whose ID is in `widget.json`. Link the folder to the right widget again — the
-terminal writes its ID for you — and send it again.
+only into the widget whose ID is in `widget.json`. Put this widget's ID into `widget.json` — or,
+while the widget has no version yet, link the folder to it again (Author → Code): a draft takes its
+ID from the folder's `widget.json`. Then send it again.
 
 ### `manifest.missing-name`
 
@@ -110,7 +112,7 @@ There is no `version`.
 
 The number has a suffix, such as `1.2.3-beta.1`. Nest has no pre-release channel: every approved
 version reaches every user, so a suffix means nothing here. Drop it and send a plain `1.2.3`. The
-rules for numbers are in the [README](README.en.md#a-widgets-version-number-and-compatibility).
+rules for numbers are in [Publishing](docs/publishing.en.md#release-version).
 
 ### `manifest.version-not-plain`
 
@@ -323,7 +325,7 @@ a new widget.
 
 ### `ownership.taken`
 
-This id belongs to another author. Check the `id` in `widget.json` — the terminal writes it for you.
+This id belongs to another author. Check the `id` in `widget.json`: it must be your widget's ID.
 
 ### `ownership.version-not-after`
 
