@@ -1,11 +1,12 @@
 /**
  * TypeScript definitions for the Colibri widget API.
  *
- * The route surface these types cover is pinned against the terminal's live route table by a
- * unit test, so this file and the API cannot drift apart. Payload shapes are intentionally
- * `unknown`-ish where the API returns venue data: the wire is documented in
- * docs/functionality/16-local-api-and-widgets.md, and narrowing it here would freeze shapes
- * that are still allowed to grow additively within an apiVersion.
+ * The route surface these types cover is pinned against the terminal's live route table, so this
+ * file and the API cannot drift apart. Payload shapes are intentionally `unknown`-ish where the API
+ * returns venue data that is still allowed to grow additively within an apiVersion.
+ *
+ * Every member is documented in docs/reference/ of the SDK repository:
+ * https://github.com/Colibriecosystem/colibri-widget-sdk/blob/main/docs/reference/README.en.md
  */
 
 /** Where a widget instance lives. */
@@ -72,7 +73,11 @@ export interface RequestOptions {
   apiVersion?: number;
 }
 
-/** The response-shape version this SDK reads (sent on every call). Needs a terminal that serves it. */
+/**
+ * The RESPONSE-SHAPE version this SDK reads, sent on every call. Only the deprecated `/app/panels`
+ * family has two shapes; from terminal 1.4.0 v2 is the only one. Not the same number as
+ * `handshake().apiVersion`, which is the contract major a manifest's `minApiVersion` is compared with.
+ */
 export declare const API_VERSION: number;
 
 // ── /app/panels (api-version 2) ──────────────────────────────────────────────
@@ -580,6 +585,10 @@ export declare const trading: {
   closePositions(id: string): Promise<{ status: "accepted" }>;
 };
 
+/**
+ * @deprecated The `/app/panels` routes are removed in terminal 1.4.0 — use {@link workspace}
+ * (`workspace.slot`, `addSlots`, `setSlot`, `clearSlot`, `removeSlot`).
+ */
 export declare const panels: {
   /** The workspace: every window → tab → its layout tree. `tabId` / `windowIndex` scope it. */
   list(params?: { tabId?: string; windowIndex?: number }): Promise<PanelsResponse>;
@@ -746,7 +755,10 @@ export interface ColibriBridge {
   apiVersion: number;
   widgetId: string;
   instanceId: string;
-  surface: WidgetSurface;
+  /** A getter: a move between a box and a window rewrites it in place. */
+  readonly surface: WidgetSurface;
+  /** The hosting box's durable id, `null` in a window; a getter, like `surface`. */
+  readonly slotId: string | null;
   readonly theme: string;
   readonly lang: string;
   readonly grantedScopes: Scope[];
