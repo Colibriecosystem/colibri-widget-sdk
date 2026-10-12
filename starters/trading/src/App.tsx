@@ -15,8 +15,10 @@ import { format, stringsFor, type Strings } from "./i18n";
  * - Changing anything the confirmation names closes it, so what is confirmed is what is sent.
  * - A demo connection is chosen first; a live one carries a red bar.
  *
- * The terminal adds its own guards on top: the `trading` permission, the per-connection grant in
- * Settings → Program → Local API, and the same order budgets a click in the terminal has.
+ * The terminal adds its own guards on top: the `trading` permission, and the trading grant the user
+ * gave THIS widget per connection in its consent ("Trading accounts"), with a per-order and a
+ * per-minute cap. The widget cannot see that grant ahead of time — `apiTradingEnabled` is the switch
+ * for external programs, not for widgets — so a missing one shows as `trading_not_enabled` on Confirm.
  */
 
 /** A positive decimal as the API wants it: digits and an optional fraction, nothing else. */
@@ -62,7 +64,7 @@ export default function App() {
     })();
   }, []);
 
-  // `apiTradingEnabled` changes when the user grants trading in Settings; "Refresh" re-reads it.
+  // "Refresh" re-reads the list: a connection added, or its keys changed, while the widget was open.
   const loadConnections = useCallback(async () => {
     try {
       setList((await connections.list()).connections);
@@ -148,9 +150,7 @@ export default function App() {
       ? s.gateNoScope
       : conn.viewOnly
         ? s.gateViewOnly
-        : !conn.apiTradingEnabled
-          ? s.gateNotGranted
-          : null;
+        : null;
   const ticketReady = !gate && bridgeOn && symbol.length > 0 && isPositive(price) && isPositive(size);
 
   /** The ONLY place an order is sent: the Confirm button's click handler. */

@@ -11,9 +11,11 @@ The terminal creates it: **Nest → Author → a widget → Code → From a temp
 the widget's ID into every `widget.json` and `package.json` and loads the ready **`dist/`** build
 with hot reload.
 
-To trade, the widget needs two permissions: `trading` when the widget is installed, and trading
-allowed for the specific connection — **Settings → Program → Local API**. Without the second the
-terminal answers `403 trading_not_enabled`, and the widget says where to switch it on.
+To trade, the widget needs two permissions: `trading`, and trading on the specific connection — the
+user grants that to this widget at install, under Trading accounts, with a per-order and a
+per-minute cap. The Local API switch for external programs has nothing to do with widgets. Without
+the connection's grant the terminal answers `403 trading_not_enabled`, and the widget says where to
+give it.
 
 ## The rules this starter keeps
 
