@@ -105,6 +105,13 @@ export const CHANNEL_SCOPES = {
   signalLevels: "signalLevels",
 };
 
+/**
+ * The frame `type` a channel's data arrives under. It is the channel's own name except for the two
+ * app-wide channels, whose frames carry ONE event each and are named in the singular — matching on
+ * the channel name would drop every frame they send.
+ */
+const FRAME_TYPES = { notifications: "notification", signalLevels: "signalLevel" };
+
 /** Thrown when a call reaches the terminal and the terminal refuses it. */
 export class ColibriError extends Error {
   constructor(status, code, message) {
@@ -522,15 +529,17 @@ export const stream = {
 
   /**
    * Subscribe and receive matching frames. Returns an unsubscribe function.
-   * `handler` sees the raw frame `{ type, data }` — byte-identical to what an external
-   * WebSocket client gets.
+   * `handler` gets the frame's `data` and the raw frame `{ type, data }` — byte-identical to what
+   * an external WebSocket client gets. It sees EVERY frame of its channel: subscribe to two
+   * symbols and both arrive at both handlers, so check `data.symbol` (or `data.connectionId`).
    */
   subscribe(channel, args, handler) {
     this._wire();
     const b = bridge();
     const record = { channel, args: args || {} };
+    const type = FRAME_TYPES[channel] || channel;
     const listener = (frame) => {
-      if (frame && frame.type === channel) handler(frame.data, frame);
+      if (frame && frame.type === type) handler(frame.data, frame);
     };
     this._subs.push(record);
     b.stream.on(listener);
