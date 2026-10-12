@@ -277,3 +277,16 @@ test("a snippet marked skip is not compiled, and a prelude comment is prepended"
     ],
   );
 });
+
+test("a link with a stray % is a problem, not a crash", () => {
+  const problems = checkLinks("a.md", "[x](100%.md)", files({}), noDirs);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /not a valid address/);
+});
+
+test("a heading that ends in # keeps it, and only a closing run of #s is dropped", () => {
+  assert.deepEqual(
+    headings("## Notes for C#\n\n## Closed ##").map((h) => h.text),
+    ["Notes for C#", "Closed"],
+  );
+});
