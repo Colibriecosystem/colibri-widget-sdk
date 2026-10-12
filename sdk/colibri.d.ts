@@ -341,14 +341,15 @@ export type SlotTarget =
   | { edge: "left" | "right" | "top" | "bottom"; slot?: never; side?: never };
 
 /**
- * One box to create. `share` is the box's fraction and belongs to the BOX, not to what fills it —
- * `content` is the same union `setSlot` takes, so the two writes stay one shape.
+ * One box to create. `share` is the box's fraction and belongs to the BOX, not to what fills it.
+ * A box is created WITH its content: the terminal refuses `{ kind: "empty" }` here (`400`), even
+ * for a single box — add it with content, then `clearSlot` it if you need it bare.
  *
  * Shares are applied PER INSERTION: the list nests as it is inserted, so the i-th box asks for a
  * fraction of what is LEFT rather than of the whole. Omit them all for an even split.
  */
 export interface NewSlot {
-  content: PlaceableContent | { kind: "empty" };
+  content: PlaceableContent;
   share?: number;
 }
 
