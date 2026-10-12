@@ -219,9 +219,12 @@ export const connections = {
 
 /**
  * Orders through the user's OWN connection — the same path a click in the terminal takes, with
- * the same per-venue rules and the same order budgets. Every call needs the `trading` scope AND
- * the user's grant for that connection (Settings → Program → Local API); without the grant it is
- * refused `403 trading_not_enabled`, and `503 not_ready` means the connection is still warming up.
+ * the same per-venue rules. Every call needs the `trading` scope AND the trading grant the user
+ * gave THIS widget for that connection when they consented to it ("Trading accounts", each with a
+ * per-order and a per-minute cap — refused `403 budget_exceeded` past either). Without the grant it
+ * is refused `403 trading_not_enabled`; `503 not_ready` means the connection is still warming up.
+ * A widget never borrows the Local API switch external programs use: `Connection.apiTradingEnabled`
+ * reports that switch and says nothing about this widget, so do not gate on it.
  *
  * A call answers `202` the moment the command is ENQUEUED. The venue's answer arrives on the
  * `orders` stream (and `positions` for a close), so track the returned `clientOrderId` there —
