@@ -636,7 +636,7 @@ type SlotTarget =
 
 /** One new slot. share belongs to the SLOT and is a fraction of what the previous ones left. */
 interface NewSlot {
-  content: PlaceableContent | { kind: "empty" };
+  content: PlaceableContent;
   share?: number;
 }
 

@@ -633,7 +633,7 @@ type SlotTarget =
 
 /** Один новый слот. share — доля СЛОТА, от того, что осталось после предыдущих. */
 interface NewSlot {
-  content: PlaceableContent | { kind: "empty" };
+  content: PlaceableContent;
   share?: number;
 }
 
