@@ -19,6 +19,7 @@ the [starters](../starters/). Every call is described in full in the [reference]
 | [A scope revoked while running](#revoked-scope) | any |
 | [The user switched the API off](#bridge-off) | none |
 | [Where is my slot, and what is beside it](#find-my-box) | `panels` |
+| [Links that leave the widget, and signing in with Telegram](#links-and-telegram-login) | none |
 
 ## <a id="order-book"></a>The order book: at once, then live
 
@@ -629,3 +630,65 @@ Reference: [`handshake()`](reference/bridge.en.md#handshake),
 [the `surface` event](reference/bridge.en.md#event-surface),
 [`workspace.slot()`](reference/layout.en.md#workspace-slot),
 [`workspace.tab()`](reference/layout.en.md#workspace-tab). No starter does this.
+
+## <a id="links-and-telegram-login"></a>Links that leave the widget, and signing in with Telegram
+
+Open a website, Telegram or mail from a widget, and sign in with Telegram in one click. No scope
+needed.
+
+A widget opens no windows inside the terminal. A link the page does not keep for itself leaves it,
+and opens where a browser would open it:
+
+| Link | Opens in |
+| --- | --- |
+| `https://…` | the system browser |
+| `t.me/…`, `telegram.me/…`, `tg:` | the Telegram app, or the t.me page in the browser without it |
+| `mailto:` | the mail app |
+| another app's link | only after **Open** in the terminal's question |
+| `file:`, `ms-*`, `javascript:` and the like | nowhere |
+
+What sends a link outside:
+
+- `window.open(url)` and a `target="_blank"` link, from the widget's page and from any frame in it;
+- a `tg:` or `mailto:` link, also from any frame;
+- the widget's page itself navigating to a host that is neither its origin nor in `egress`. The page
+  stays where it is, and a navigation to t.me always goes to Telegram.
+
+Signing in with Telegram is a link to your bot carrying a one-time token, plus polling your server:
+
+<!-- check: prelude declare function waitForSignIn(): void; -->
+
+```js
+const button = document.getElementById("telegram-login");
+const fallback = document.getElementById("telegram-link"); // <a target="_blank" hidden>
+
+button.addEventListener("click", async () => {
+  // The server starts a sign-in and returns the bot link: https://t.me/<bot>?start=<token>
+  const r = await fetch("/api/login/telegram", { method: "POST" });
+  const { url } = await r.json();
+  // In the terminal the link goes to Telegram at once: the call need not be inside the click.
+  // A browser may block that window, so the same link stays on screen as a button.
+  window.open(url, "_blank");
+  fallback.setAttribute("href", url);
+  fallback.hidden = false;
+  waitForSignIn(); // poll your server until the user confirms the sign-in in the bot
+});
+```
+
+Pitfalls:
+
+- **The Telegram Login Widget does not work.** Its `oauth.telegram.org` window answers the page
+  through `window.opener`, and there are no windows inside the terminal. Sign-in goes through the
+  bot link only.
+- **The `start` token is Latin letters, digits, `_` and `-`, up to 64 characters**: Telegram's own
+  rule. With other characters the link opens as a t.me page in the browser, not in the app.
+- **Draw no conclusion from what `window.open` returned.** There was no window in the terminal: the
+  link went to the system, and the page is never told.
+- **A frame that navigates itself to `https://` stays in the frame**, and `egress` checks the
+  navigation. If your widget shows your site in an `<iframe>`, open links outside with
+  `window.open` or `target="_blank"`, not with `location.href`.
+- **Links at a human pace.** At least 1.5 seconds between two, the same one at most once in 3
+  seconds, no more than 5 a minute. The terminal silently skips the rest.
+
+Reference: [`egress`](reference/manifest.en.md#manifest-egress),
+[hard boundaries](../CAPABILITIES.en.md#hard-boundaries). No starter does this.
