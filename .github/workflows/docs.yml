@@ -1,0 +1,40 @@
+name: docs
+
+# The author docs stay true: every page has its English pair with the same shape, every link and
+# anchor resolves, nothing points at a place an author cannot open, the ids released terminals link
+# are still there, the API reference matches sdk/colibri.d.ts member by member, and every code sample
+# compiles against it. What each check means is scripts/docs.mjs.
+#
+# This workflow never publishes anything: every release of this repository is a starters release
+# (AGENTS.md), and that is starters.yml's job alone.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: The gate's own tests
+        run: node --test scripts/docs.test.mjs
+
+      - name: Pairs, links, anchors, published ids, the reference against colibri.d.ts
+        run: node scripts/docs.mjs check
+
+      - name: TypeScript for the snippets (the React starter's pinned version)
+        run: npm ci --prefix starters/react
+
+      - name: Every code sample compiles against colibri.d.ts
+        run: node scripts/docs.mjs snippets
