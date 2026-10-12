@@ -16,7 +16,7 @@
 ### <a id="notifications-raise"></a>`notifications.raise()`
 
 ```ts decl
-raise(body: { message: string; severity?: "info" | "success" | "warning" | "error"; title?: string }): Promise<unknown>;
+raise(body: { message: string; severity?: "info" | "success" | "warning" | "error"; source?: string }): Promise<{ status: "raised" | "muted" }>;
 ```
 
 Разрешение: `notifications`.
@@ -24,7 +24,7 @@ raise(body: { message: string; severity?: "info" | "success" | "warning" | "erro
 Показать уведомление в терминале: всплывающее сообщение и звук — так, как пользователь настроил
 уведомления от API и виджетов в настройках. `message` обязателен, не длиннее 500 символов. `severity`
 — `info` (по умолчанию), `success`, `warning` или `error`; другое значение — `400 bad_request`.
-`title` терминал сейчас не показывает — всё, что нужно увидеть, пишите в `message`. Ответ —
+`source`, если задан, терминал ставит перед текстом: «источник: сообщение». Ответ —
 `{ status: "raised" }` или `{ status: "muted" }`, если пользователь заглушил виджет.
 
 ```js

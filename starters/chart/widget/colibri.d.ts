@@ -687,7 +687,11 @@ export declare const workspace: {
 };
 
 export declare const notifications: {
-  raise(body: { message: string; severity?: "info" | "success" | "warning" | "error"; title?: string }): Promise<unknown>;
+  /**
+   * A toast and the user's sound. `message` is required, at most 500 characters; `source`, when
+   * given, is shown in front of it. `muted`: the user muted this widget — nothing was shown.
+   */
+  raise(body: { message: string; severity?: "info" | "success" | "warning" | "error"; source?: string }): Promise<{ status: "raised" | "muted" }>;
 };
 
 export declare const signalLevels: {

@@ -16,15 +16,15 @@ something, not on every change — or yours will be the first widget muted.
 ### <a id="notifications-raise"></a>`notifications.raise()`
 
 ```ts decl
-raise(body: { message: string; severity?: "info" | "success" | "warning" | "error"; title?: string }): Promise<unknown>;
+raise(body: { message: string; severity?: "info" | "success" | "warning" | "error"; source?: string }): Promise<{ status: "raised" | "muted" }>;
 ```
 
 Scope: `notifications`.
 
 Show a notification in the terminal: a toast and a sound — as the user configured notifications from
 the API and widgets in settings. `message` is required, at most 500 characters. `severity` is `info`
-(the default), `success`, `warning` or `error`; anything else is `400 bad_request`. The terminal does
-not show `title` today — put everything that must be seen into `message`. The reply is
+(the default), `success`, `warning` or `error`; anything else is `400 bad_request`. `source`, when
+given, is shown in front of the text: "source: message". The reply is
 `{ status: "raised" }`, or `{ status: "muted" }` when the user muted the widget.
 
 ```js
