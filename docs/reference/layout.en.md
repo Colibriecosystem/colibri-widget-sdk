@@ -631,7 +631,7 @@ The `workspace` request bodies:
 ```ts decl
 /** Where the slots land: { slot, side } or { edge }, never both. Neither — the tab's right edge. */
 type SlotTarget =
-  | { slot: string; side?: "left" | "right" | "top" | "bottom"; edge?: never }
+  | { slot: string; side: "left" | "right" | "top" | "bottom"; edge?: never }
   | { edge: "left" | "right" | "top" | "bottom"; slot?: never; side?: never };
 
 /** One new slot. share belongs to the SLOT and is a fraction of what the previous ones left. */

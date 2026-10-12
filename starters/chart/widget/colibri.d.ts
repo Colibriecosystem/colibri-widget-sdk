@@ -331,13 +331,14 @@ export interface WorkspaceSlotLookup {
 
 /**
  * Where a stack of boxes lands. `{slot, side}` and `{edge}` are MUTUALLY EXCLUSIVE — sending both
- * is `400 bad_request`, and sending neither appends to the tab's root row.
+ * is `400 bad_request`, and omitting `target` appends to the tab's root row. `side` is REQUIRED with
+ * `slot` (it decides the resulting layout, so the terminal never guesses it).
  *
  * There is deliberately no "mode": how the room is found beside an anchor is decided by the side
  * and the two content kinds, through the same table a drag-and-drop goes through.
  */
 export type SlotTarget =
-  | { slot: string; side?: "left" | "right" | "top" | "bottom"; edge?: never }
+  | { slot: string; side: "left" | "right" | "top" | "bottom"; edge?: never }
   | { edge: "left" | "right" | "top" | "bottom"; slot?: never; side?: never };
 
 /**

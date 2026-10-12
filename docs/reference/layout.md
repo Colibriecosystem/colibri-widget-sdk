@@ -628,7 +628,7 @@ interface WorkspaceSlotLookup {
 ```ts decl
 /** Куда встанут слоты: { slot, side } или { edge }, не оба. Ничего — правый край вкладки. */
 type SlotTarget =
-  | { slot: string; side?: "left" | "right" | "top" | "bottom"; edge?: never }
+  | { slot: string; side: "left" | "right" | "top" | "bottom"; edge?: never }
   | { edge: "left" | "right" | "top" | "bottom"; slot?: never; side?: never };
 
 /** Один новый слот. share — доля СЛОТА, от того, что осталось после предыдущих. */
