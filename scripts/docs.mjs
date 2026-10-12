@@ -114,7 +114,7 @@ export function headings(text) {
   const out = [];
   for (const line of lines(text)) {
     if (line.code) continue;
-    const m = /^(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line.text);
+    const m = /^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/.exec(line.text);
     if (!m) continue;
     const ids = [...m[2].matchAll(/<a\s+id="([^"]+)"\s*>\s*<\/a>/g)].map((x) => x[1]);
     let s = slug(headingText(m[2]));
@@ -247,20 +247,39 @@ export function checkPublic(page, text) {
 export function checkLinks(page, text, read, isDir) {
   const problems = [];
   const own = new RegExp(`^${REPO_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/(?:blob|tree)/main/([^?#]*)(#.*)?$`);
+  // One parse per target page, however many links point into it.
+  const anchorsOf = new Map();
+  const has = (file, body, anchor) => {
+    if (!anchorsOf.has(file)) anchorsOf.set(file, anchors(body));
+    return anchorsOf.get(file).has(anchor);
+  };
+  const decode = (raw, fn) => {
+    try {
+      return fn(raw);
+    } catch {
+      return null;
+    }
+  };
   for (const { n, target } of links(text)) {
     let rel = target;
     const mine = own.exec(target);
     if (mine) rel = "/" + mine[1] + (mine[2] ?? "");
     else if (/^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
-    const [p, hash] = rel.split("#");
-    const file = p ? (p.startsWith("/") ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(page), decodeURI(p)))).replace(/\/$/, "") : page;
+    const [rawPath, rawHash] = rel.split("#");
+    const p = decode(rawPath, decodeURI);
+    const hash = rawHash === undefined ? undefined : decode(rawHash, decodeURIComponent);
+    if (p === null || hash === null) {
+      problems.push(`${page}:${n}: links ${target}, which is not a valid address (a stray %?)`);
+      continue;
+    }
+    const file = p ? (p.startsWith("/") ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(page), p))).replace(/\/$/, "") : page;
     const body = file === page ? text : read(file);
     if (body === null && !isDir(file)) {
       problems.push(`${page}:${n}: links ${target}, but ${file} is not a tracked file`);
       continue;
     }
-    if (hash !== undefined && body !== null && file.endsWith(".md") && !anchors(body).has(decodeURIComponent(hash))) {
-      problems.push(`${page}:${n}: links ${target}, but ${file} has no #${decodeURIComponent(hash)}`);
+    if (hash !== undefined && body !== null && file.endsWith(".md") && !has(file, body, hash)) {
+      problems.push(`${page}:${n}: links ${target}, but ${file} has no #${hash}`);
     }
   }
   return problems;
