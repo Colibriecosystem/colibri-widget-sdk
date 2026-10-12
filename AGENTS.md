@@ -2,7 +2,7 @@
 
 Guidance for AI agents working in this repository.
 
-> This file currently covers two conventions. It is **not** a complete description of this
+> This file currently covers three conventions. It is **not** a complete description of this
 > repository's conventions — read the README and the code around whatever you are changing.
 
 ## UI mockups live in a different repository
@@ -41,3 +41,18 @@ never mark one "latest" by hand: every terminal's «Из шаблона» would 
 - `starters.json`'s format only grows (new optional fields). A breaking change publishes
   `starters.v2.json` beside it, and `starters.json` keeps being published for older terminals —
   see [`starters/README.md`](starters/README.md).
+
+## The author docs are pairs, checked against the code
+
+Every page is a pair: `X.md` in Russian (the authored voice) and `X.en.md` in English, with the same
+explicit ids, the same heading structure and the same code blocks. The API reference in
+[`docs/reference/`](docs/reference/) documents every member of `sdk/colibri.d.ts` with its exact
+declaration and the scope it needs, and every code sample compiles against the types. All of it is
+enforced by `node scripts/docs.mjs check` and `snippets` (CI: `.github/workflows/docs.yml`).
+
+- Add a member to the SDK and the check fails until the reference has it; `node scripts/docs.mjs
+  scaffold` prints the missing sections.
+- Released terminals link pages and anchors listed in
+  [`scripts/published-ids.txt`](scripts/published-ids.txt). Those ids are forever: never remove one,
+  and never rename a `CHECKS*.md` code heading or `CAPABILITIES*.md`'s browser-permissions heading.
+- These pages are public: no private repository names, terminal source paths or private issue numbers.

@@ -1,0 +1,40 @@
+// Every page and anchor a released Colibri terminal links. A terminal ships these URLs compiled in, so
+// they must keep resolving for as long as such a terminal is in use: `node scripts/docs.mjs check`
+// fails when one disappears. Add a line before a terminal starts linking a new place; never remove one.
+//
+// One `page#anchor` per line (the Russian page: its English twin is checked too); `//` starts a comment.
+
+// The four author docs (Nest → Settings).
+docs/getting-started.md
+docs/reference/README.md
+docs/recipes.md
+docs/publishing.md
+
+// The Author tab: the journey, the new-widget dialog, the Code choices.
+docs/getting-started.md#new-widget
+docs/getting-started.md#code
+docs/getting-started.md#own-folder
+docs/getting-started.md#from-template
+docs/publishing.md#author
+docs/publishing.md#author-key
+docs/publishing.md#widget-id
+docs/publishing.md#hosted
+docs/publishing.md#review
+docs/publishing.md#catalog-or-link
+
+// A widget page's sections.
+docs/publishing.md#overview
+docs/publishing.md#listing
+docs/publishing.md#versions
+docs/publishing.md#access
+docs/publishing.md#stats
+docs/publishing.md#announcement
+
+// The release wizard's steps.
+docs/publishing.md#release-version
+docs/publishing.md#release-notes
+docs/publishing.md#release-build
+docs/publishing.md#release-submit
+
+// Printed in every widget's DevTools console when the terminal refuses a browser permission.
+CAPABILITIES.en.md#browser-permissions
