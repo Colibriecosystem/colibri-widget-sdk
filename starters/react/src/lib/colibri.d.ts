@@ -418,7 +418,7 @@ export declare const markets: {
   symbols(exchange: string): Promise<unknown>;
   book(exchange: string, symbol: string, params?: RequestOptions["params"]): Promise<Book>;
   clusters(exchange: string, symbol: string, params?: RequestOptions["params"]): Promise<unknown>;
-  funding(exchange: string, symbol: string): Promise<unknown>;
+  funding(exchange: string, symbol: string): Promise<Funding>;
   orderbookSettings(exchange: string): Promise<unknown>;
   patchOrderbookSettings(exchange: string, patch: unknown): Promise<unknown>;
 };
@@ -461,6 +461,16 @@ export interface TradesFrame {
   exchange: string;
   symbol: string;
   trades: Trade[];
+}
+
+/** `markets.funding()` and the `funding` stream frame: a perpetual's funding rate. */
+export interface Funding {
+  exchange: string;
+  symbol: string;
+  /** Decimal string: "0.0001" is 0.01 %. */
+  rate: string;
+  /** The next funding time, unix ms. */
+  nextFundingTimeMs: number;
 }
 
 /** One exchange connection (account). No credentials ever cross the wire. */
@@ -713,17 +723,60 @@ export declare const net: {
   fetch(url: string, init?: { method?: "GET" | "POST"; body?: string; contentType?: string }): Promise<NetFetchResult>;
 };
 
-export interface StreamFrame {
+/** The `notifications` stream frame: one terminal notification. No credentials ever cross the wire. */
+export interface StreamNotification {
+  /** The notification kind, e.g. `OrderFilled`. */
+  kind: string;
+  severity: "info" | "success" | "warning" | "error";
+  message: string;
+  symbol: string | null;
+  connectionId: string | null;
+  connectionLabel: string | null;
+}
+
+/** One price alert, as the `signalLevels` stream frame carries it (`frame.event` says what happened). */
+export interface SignalLevel {
+  id: string;
+  exchange: string;
+  symbol: string;
+  price: string;
+  direction: "Above" | "Below" | "Cross";
+  note: string | null;
+  /** Removed once it fires; otherwise kept with `isTriggered` until `signalLevels.clearTriggered()`. */
+  oneShot: boolean;
+  createdMs: number;
+  isTriggered: boolean;
+  triggeredMs: number | null;
+}
+
+/** channel → the `data` its frames carry. */
+export interface ChannelData {
+  book: Book;
+  trades: TradesFrame;
+  funding: Funding;
+  positions: PositionsData;
+  orders: OrdersData;
+  balance: BalanceData;
+  notifications: StreamNotification;
+  signalLevels: SignalLevel;
+}
+
+/** One `/stream` frame as it arrives: data frames, acks (`subscribed`) and errors alike. */
+export interface StreamFrame<T = unknown> {
   type: string;
-  data: unknown;
+  data: T;
+  /** `signalLevels` only: `placed` | `removed` | `triggered`. */
+  event?: string;
+  /** The correlation id an ack or error echoes. */
+  id?: string | null;
 }
 
 export declare const stream: {
   /** Subscribe; returns an unsubscribe function. Re-subscribes itself after a bridge re-enable or reset. */
-  subscribe(
-    channel: Channel,
+  subscribe<C extends Channel>(
+    channel: C,
     args: Record<string, unknown> | undefined,
-    handler: (data: unknown, frame: StreamFrame) => void,
+    handler: (data: ChannelData[C], frame: StreamFrame<ChannelData[C]>) => void,
   ): () => void;
   /** Every frame, acks and errors included. */
   onAny(handler: (frame: StreamFrame) => void): () => void;
@@ -746,8 +799,64 @@ export interface PermissionRefusedEvent {
   message: string;
 }
 
+/** `theme`: the palette, the language or the font scale changed. `handshake()` is updated first. */
+export interface ThemeEvent {
+  type: "colibri:theme";
+  /** `dark` | `light`. */
+  theme: string;
+  /** Every CSS variable the host sets on `<html>`, name → value. */
+  vars: Record<string, string>;
+  /** UI language tag (`en`, `ru`, …). */
+  lang: string;
+  /** The terminal's font scale; also `--colibri-font-scale`. */
+  fontScale: number;
+}
+
+/** `visibility`: the widget was shown or hidden. A hidden widget keeps running. */
+export interface VisibilityEvent {
+  type: "colibri:visibility";
+  visible: boolean;
+}
+
+/** `surface`: the widget moved between boxes, or between a box and a window. It is not restarted. */
+export interface SurfaceEvent {
+  type: "colibri:surface";
+  surface: WidgetSurface;
+  /** The new box's durable id; `null` (or absent) in a window. */
+  slotId?: string | null;
+}
+
+/** `bridge`: the user switched the widget API off or back on. */
+export interface BridgeEvent {
+  type: "colibri:bridge";
+  enabled: boolean;
+}
+
+/** `grants`: the scopes this widget holds changed. `handshake().grantedScopes` is updated first. */
+export interface GrantsEvent {
+  type: "colibri:grants";
+  scopes: Scope[];
+}
+
+/** `streamReset`: the host dropped every subscription; `stream.subscribe` re-issues them itself. */
+export interface StreamResetEvent {
+  type: "colibri:stream-reset";
+  reason: string;
+}
+
+/** event → the payload its handler receives. */
+export interface HostEventPayloads {
+  theme: ThemeEvent;
+  visibility: VisibilityEvent;
+  surface: SurfaceEvent;
+  bridge: BridgeEvent;
+  grants: GrantsEvent;
+  streamReset: StreamResetEvent;
+  permissionRefused: PermissionRefusedEvent;
+}
+
 /** Subscribe to a host event; returns an unsubscribe function. */
-export declare function on(event: HostEvent, handler: (payload: never) => void): () => void;
+export declare function on<E extends HostEvent>(event: E, handler: (payload: HostEventPayloads[E]) => void): () => void;
 
 /** The raw tunnel the host injects. The named exports above are sugar over exactly this. */
 export interface ColibriBridge {
