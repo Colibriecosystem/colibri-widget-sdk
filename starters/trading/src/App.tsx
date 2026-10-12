@@ -375,6 +375,8 @@ function errorText(e: unknown, s: Strings): string {
     switch (e.code) {
       case "trading_not_enabled":
         return s.errNotGranted;
+      case "budget_exceeded":
+        return s.errBudget;
       case "not_ready":
         return s.errNotReady;
       case "rate_limited":

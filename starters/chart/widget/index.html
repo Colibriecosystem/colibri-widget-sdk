@@ -49,8 +49,8 @@
       import { createChart } from "./chart.js";
 
       const TEXT = {
-        ru: { note: "история — с момента открытия", failed: "Нет данных: {0}", bridgeOff: "API для виджетов выключен: Настройки → Виджеты." },
-        en: { note: "history starts when the chart opens", failed: "No data: {0}", bridgeOff: "The widget API is off: Settings → Widgets." },
+        ru: { note: "история — с момента открытия", failed: "Нет данных: {0}", bridgeOff: "API для виджетов выключен: Nest → «Настройки» → «Мост API (bridge)»." },
+        en: { note: "history starts when the chart opens", failed: "No data: {0}", bridgeOff: "The widget API is off: Nest → Settings → API bridge." },
       };
       let lang = handshake().lang === "ru" ? "ru" : "en";
       const t = (key, ...args) => TEXT[lang][key].replace(/\{(\d)\}/g, (_, i) => String(args[i]));

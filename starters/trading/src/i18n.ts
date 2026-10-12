@@ -32,12 +32,13 @@ const ru = {
   gateViewOnly: "Это подключение только для просмотра: торговать через него нельзя.",
   noAccountScope: "Виджету не выдано разрешение видеть счёт.",
   errNotGranted: "Терминал отказал: этому виджету не разрешено торговать на этом подключении. Разрешите его в «Торговых подключениях» виджета.",
+  errBudget: "Терминал не пропустил заявку: она больше лимита на ордер или на ордера в минуту, которые вы дали виджету.",
   errNotReady: "Подключение ещё не готово — повторите через пару секунд.",
   errRateLimited: "Слишком много запросов — подождите немного.",
   errUnauthorized: "У виджета нет нужного разрешения.",
   errRefused: "Терминал не пропустил заявку: {0}",
   errOther: "Ошибка {0}: {1}",
-  bridgeOff: "API для виджетов выключен: Настройки → Виджеты.",
+  bridgeOff: "API для виджетов выключен: Nest → «Настройки» → «Мост API (bridge)».",
 };
 
 type Strings = typeof ru;
@@ -75,12 +76,13 @@ const en: Strings = {
   gateViewOnly: "This connection is view-only: it cannot trade.",
   noAccountScope: "The widget was not granted to see the account.",
   errNotGranted: "Refused: this widget may not trade on this connection. Allow it under the widget's Trading accounts.",
+  errBudget: "Refused: the order is over the per-order or per-minute limit you gave this widget.",
   errNotReady: "The connection is not ready yet — try again in a couple of seconds.",
   errRateLimited: "Too many requests — wait a little.",
   errUnauthorized: "The widget lacks the permission this needs.",
   errRefused: "The terminal refused the order: {0}",
   errOther: "Error {0}: {1}",
-  bridgeOff: "The widget API is off: Settings → Widgets.",
+  bridgeOff: "The widget API is off: Nest → Settings → API bridge.",
 };
 
 export type { Strings };
