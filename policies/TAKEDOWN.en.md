@@ -61,4 +61,4 @@ to a version the feed does not name heals on their own.
 ## See also
 
 - [CONTENT.en.md](CONTENT.en.md) — what may be published.
-- [AUTHORING.en.md](../AUTHORING.en.md) — the author's three stages.
+- [Publishing](../docs/publishing.en.md) — a widget's way into the catalog, from the author ID to review and access.

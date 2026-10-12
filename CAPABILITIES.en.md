@@ -118,7 +118,8 @@ everything else.
 
 Data — your own exchange WebSockets (to hosts in `egress` — the document's CSP enforces the same
 list, so an undeclared socket fails with a `SecurityError`, not a network error) +
-`colibri.net.fetch` (see the README's market-data section); terminal things — the bridge;
+`colibri.net.fetch` (see [where market data comes from](docs/reference/market-data.en.md#market-data-sources));
+terminal things — the bridge;
 compute — JS or WASM. Both reference widgets in `examples/` are built this way.
 
 **Take this pattern if you do not already have a site.** It gives what no other one does: a pinned
@@ -136,8 +137,7 @@ already have a server.
 **If your web app already works, this is the shortest path:** a folder holding a single
 `widget.json`, no build and no packing, and you ship updates on your own server without
 republishing the widget. Wrapping your own site in a bundle to earn the green badge is neither
-needed nor possible — see [AUTHORING.en.md](AUTHORING.en.md), "First, the fork: hosted or
-bundled".
+needed nor possible — see [a hosted widget](docs/publishing.en.md#hosted) in Publishing.
 
 ### 3 · A native program + the Local API (no widget at all)
 
@@ -167,7 +167,8 @@ What this means in practice if your tool today is a page + a local backend:
   server is now yours to run — infrastructure, accounts, and user data flowing through it (the
   consent shows that).
 - **Bundled — full citizenship at the cost of a rewrite.** The core goes to WASM (Pyodide for
-  Python) or JS; exchange connections open from the page (see the README on market data). It is
+  Python) or JS; exchange connections open from the page (see
+  [where market data comes from](docs/reference/market-data.en.md#market-data-sources)). It is
   real work, but only this path gives the catalog, the pinned hash, and independence from your
   server.
 - **Staying a native program (pattern 3) remains a first-class path.** The Local API is not
@@ -178,8 +179,8 @@ What this means in practice if your tool today is a page + a local backend:
 - **One transport module.** All `fetch`/`stream`/bridge calls in one file; tables, forms and
   charts never know where data comes from. This rule has already paid for itself twice in real
   migrations.
-- **Theme via tokens.** Colors only through `--colibri-role-*` (see the README's styling
-  section) — the widget follows the user's theme with zero code.
+- **Theme via tokens.** Colors only through `--colibri-role-*` (see
+  [the roles](docs/reference/theme.en.md#roles)) — the widget follows the user's theme with zero code.
 - **Subscribe, don't poll.** `colibri.stream.subscribe` instead of a `request` loop — polling
   eats the 300-calls/min budget instantly, a subscription spends none of it.
 - **`handshake()` once at start**; check rights via `grantedScopes` and listen to the `grants`

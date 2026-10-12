@@ -72,4 +72,4 @@ rather than a limitation.
 ## See also
 
 - [TAKEDOWN.en.md](TAKEDOWN.en.md) — how a widget is taken down, and what happens when it is.
-- [AUTHORING.en.md](../AUTHORING.en.md) — the author's three stages.
+- [Publishing](../docs/publishing.en.md) — a widget's way into the catalog, from the author ID to review and access.
