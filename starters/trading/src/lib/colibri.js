@@ -7,7 +7,7 @@
  *
  * No build step, no dependencies, no bundler — drop it next to your page and import it.
  *
- * @see README.md
+ * @see https://github.com/Colibriecosystem/colibri-widget-sdk/blob/main/docs/reference/README.en.md
  */
 
 /**
@@ -139,10 +139,11 @@ function query(params) {
 /**
  * The response-shape version this SDK is written against, sent on EVERY call (the terminal
  * reads it from the bridge envelope; over HTTP it is the `api-version` header). Today only the
- * `/app/panels` family has two shapes; every other route ignores it. A terminal older than the
- * one that introduced v2 ignores the field and answers v1 — so this SDK needs a terminal that
- * serves v2 (check `supportedApiVersions` on `GET /ping`, or `handshake().apiVersion`).
- * From terminal 1.4.0 the header is ignored and v2 is the only shape.
+ * deprecated `/app/panels` family has two shapes; every other route ignores it, and from terminal
+ * 1.4.0 v2 is the only shape. A terminal older than the one that introduced v2 answers v1.
+ *
+ * This is NOT `handshake().apiVersion`: that is the contract major (1) a manifest's
+ * `minApiVersion` is compared with, and it says nothing about response shapes.
  */
 export const API_VERSION = 2;
 
