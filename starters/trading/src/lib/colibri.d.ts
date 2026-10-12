@@ -485,7 +485,10 @@ export interface Connection {
   demo: boolean;
   /** No credentials, or trading switched off — market data only. */
   viewOnly: boolean;
-  /** The user granted this connection trading through the Local API. Without it `trading.*` answers 403. */
+  /**
+   * The user let EXTERNAL programs trade this connection through the Local API. It says nothing about
+   * a widget: a widget trades only on its own grant from its consent ("Trading accounts").
+   */
   apiTradingEnabled: boolean;
 }
 
@@ -578,8 +581,9 @@ export declare const connections: {
 };
 
 /**
- * Orders through the user's own connection. Needs the `trading` scope AND the user's grant for that
- * connection (`403 trading_not_enabled` without it). Every call answers when the command is
+ * Orders through the user's own connection. Needs the `trading` scope AND the trading grant the user
+ * gave this widget for that connection in its consent (`403 trading_not_enabled` without it; past the
+ * grant's per-order or per-minute cap, `403 budget_exceeded`). Every call answers when the command is
  * ENQUEUED; the venue's answer arrives on the `orders` / `positions` streams.
  *
  * Place an order only because the user asked for it in that moment — never on load, from a timer,
