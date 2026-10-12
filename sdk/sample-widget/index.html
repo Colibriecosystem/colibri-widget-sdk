@@ -50,7 +50,7 @@
 
     <script type="module">
       // Zero hand-rolled protocol: every call below goes through the SDK.
-      import colibri, { markets, panels, notifications, storage, stream, on } from "./colibri.js";
+      import colibri, { markets, workspace, notifications, storage, stream, on } from "./colibri.js";
 
       const meta = document.getElementById("meta");
       const status = document.getElementById("status");
@@ -76,14 +76,14 @@
         const asks = (data.asks || []).slice(0, 6).reverse();
         const bids = (data.bids || []).slice(0, 6);
         bookEl.innerHTML =
-          asks.map((l) => `<div class="ask">${l.price}</div><div class="ask">${l.qty}</div>`).join("") +
-          bids.map((l) => `<div class="bid">${l.price}</div><div class="bid">${l.qty}</div>`).join("");
+          asks.map((l) => `<div class="ask">${l.price}</div><div class="ask">${l.baseQty}</div>`).join("") +
+          bids.map((l) => `<div class="bid">${l.price}</div><div class="bid">${l.baseQty}</div>`).join("");
       });
 
       // 3. Drive the terminal.
       document.getElementById("open").onclick = async () => {
         try {
-          await panels.add({ content: { exchange: "BinanceSpot", symbol: "ETHUSDT", views: ["orderbook"] }, activate: true });
+          await workspace.addSlots({ slots: [{ content: { kind: "orderbook", exchange: "BinanceSpot", symbol: "ETHUSDT" } }], activate: true });
           say("opened ETHUSDT.");
         } catch (e) {
           say(`open failed: ${e.code} — ${e.message}`);
