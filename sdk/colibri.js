@@ -520,7 +520,12 @@ export const stream = {
     b.on("bridge", (e) => {
       if (e && e.enabled) this._resubscribe();
     });
-    b.on("streamReset", () => this._resubscribe());
+    // A reset because the user switched the bridge OFF must not resubscribe: every subscribe sent
+    // while it is off is answered with another such reset, so resubscribing there loops forever.
+    // The `bridge` event above resubscribes once it is back on.
+    b.on("streamReset", (e) => {
+      if (!(e && /^bridge[ _]disabled$/.test(e.reason))) this._resubscribe();
+    });
   },
 
   _resubscribe() {
