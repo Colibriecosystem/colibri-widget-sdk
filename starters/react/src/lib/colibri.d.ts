@@ -731,7 +731,7 @@ export declare const net: {
 export interface StreamNotification {
   /** The notification kind, e.g. `OrderFilled`. */
   kind: string;
-  severity: "info" | "success" | "warning" | "error";
+  severity: "Info" | "Success" | "Warning" | "Error";
   message: string;
   symbol: string | null;
   connectionId: string | null;
