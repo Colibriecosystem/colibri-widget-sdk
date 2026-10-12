@@ -193,10 +193,10 @@ frame itself.
 - **A handler sees EVERY frame of its channel**, not just its own subscription's. Subscribe to two
   symbols and both reach both handlers, so check `data.symbol` (on the account channels,
   `data.connectionId`).
-- **A subscription is a channel plus its key** (`exchange` + `symbol`, or `connectionId`). A second
-  subscription with the same key is refused, and unsubscribing one drops the key for every handler.
-  Subscribe once and fan the data out yourself. `depth` and `hz` are not part of the key: a second
-  `book` on the same symbol with another depth does not apply.
+- **A subscription is a channel plus its key** (`exchange` + `symbol`, or `connectionId`). The
+  terminal holds one subscription per key; the SDK shares it between handlers with the same key: the
+  first subscribes, the last to leave unsubscribes. `depth` and `hz` are not part of the key: the
+  first subscriber's apply — a second `book` on the same symbol with another depth does not change it.
 - **Args.** Market channels take `{ exchange, symbol }`, and `book` also `depth` and `hz`; account
   channels take `{ connectionId }`; `notifications` and `signalLevels` take none (`undefined`).
 - **Errors are not thrown.** A refusal arrives as a frame `{ type: "error", data: { code, message } }`,

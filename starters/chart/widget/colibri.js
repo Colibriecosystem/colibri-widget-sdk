@@ -512,25 +512,40 @@ export const net = {
 export const stream = {
   _subs: [],
   _wired: false,
+  /** The bridge was switched off (or answered as off): resubscribe once it is back on, not before. */
+  _off: false,
 
   _wire() {
     if (this._wired) return;
     this._wired = true;
     const b = bridge();
+    // The terminal also announces `enabled: true` on every page start, when the subscriptions it
+    // holds are live — resubscribing then would only be refused as duplicates. So only an ON that
+    // follows an OFF resubscribes.
     b.on("bridge", (e) => {
-      if (e && e.enabled) this._resubscribe();
+      if (!e) return;
+      if (!e.enabled) {
+        this._off = true;
+      } else if (this._off) {
+        this._off = false;
+        this._resubscribe();
+      }
     });
-    // A reset because the user switched the bridge OFF must not resubscribe: every subscribe sent
-    // while it is off is answered with another such reset, so resubscribing there loops forever.
-    // The `bridge` event above resubscribes once it is back on.
+    // A reset because the bridge is OFF must not resubscribe: every subscribe sent while it is off
+    // is answered with another such reset, so resubscribing there loops forever.
     b.on("streamReset", (e) => {
-      if (!(e && /^bridge[ _]disabled$/.test(e.reason))) this._resubscribe();
+      if (e && /^bridge[ _]disabled$/.test(e.reason)) this._off = true;
+      else this._resubscribe();
     });
   },
 
+  /** Re-send one subscribe per terminal subscription, however many handlers share it. */
   _resubscribe() {
     const b = bridge();
+    const sent = new Set();
     for (const sub of this._subs) {
+      if (sent.has(sub.key)) continue;
+      sent.add(sub.key);
       b.stream.subscribe(sub.channel, sub.args);
     }
   },
@@ -540,24 +555,31 @@ export const stream = {
    * `handler` gets the frame's `data` and the raw frame `{ type, data }` — byte-identical to what
    * an external WebSocket client gets. It sees EVERY frame of its channel: subscribe to two
    * symbols and both arrive at both handlers, so check `data.symbol` (or `data.connectionId`).
+   *
+   * The terminal holds ONE subscription per channel and key (`exchange` + `symbol`, or
+   * `connectionId`) and refuses a second. Handlers that subscribe the same key share it: only the
+   * first sends the subscribe — its `depth`/`hz` win — and only the last to leave unsubscribes.
    */
   subscribe(channel, args, handler) {
     this._wire();
     const b = bridge();
-    const record = { channel, args: args || {} };
+    const a = args || {};
+    const record = { channel, args: a, key: [channel, a.exchange, a.symbol, a.connectionId].join("|") };
     const type = FRAME_TYPES[channel] || channel;
     const listener = (frame) => {
       if (frame && frame.type === type) handler(frame.data, frame);
     };
+    const shared = this._subs.some((s) => s.key === record.key);
     this._subs.push(record);
     b.stream.on(listener);
-    b.stream.subscribe(channel, record.args);
+    if (!shared) b.stream.subscribe(channel, record.args);
 
     return () => {
       b.stream.off(listener);
-      b.stream.unsubscribe(channel, record.args);
       const i = this._subs.indexOf(record);
-      if (i >= 0) this._subs.splice(i, 1);
+      if (i < 0) return;
+      this._subs.splice(i, 1);
+      if (!this._subs.some((s) => s.key === record.key)) b.stream.unsubscribe(channel, record.args);
     };
   },
 
