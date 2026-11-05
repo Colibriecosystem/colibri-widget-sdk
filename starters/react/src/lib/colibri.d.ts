@@ -573,13 +573,21 @@ export declare const connections: {
   positions(id: string): Promise<PositionsData>;
   orders(id: string): Promise<OrdersData>;
   balances(id: string): Promise<BalanceData>;
-  /** Closed-trade history, newest close first. `fromMs`/`toMs` bound the close time, half-open. */
+  /**
+   * Closed trades as the venue records them, newest close first, read from the terminal's cache.
+   * `fromMs`/`toMs` bound the close time, half-open.
+   */
   trades(
     id: string,
     params?: { page?: number; pageSize?: number; symbol?: string; fromMs?: number; toMs?: number },
   ): Promise<unknown>;
-  /** One closed trade with its individual fills. */
-  trade(id: string, tradeId: number | string): Promise<unknown>;
+  /** One closed trade with its individual fills; `fills: "fetch"` asks the venue for missing ones. */
+  trade(id: string, tradeId: number | string, params?: { fills?: "cache" | "fetch" }): Promise<unknown>;
+  /** Ask the venue for this connection's history (at most the last 30 days); progress rides `trades().sync`. */
+  syncTrades(
+    id: string,
+    params?: { fromMs?: number; toMs?: number },
+  ): Promise<{ status: "accepted"; connectionId: string; fromMs: number; toMs: number }>;
 };
 
 /**

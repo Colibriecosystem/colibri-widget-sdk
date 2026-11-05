@@ -51,6 +51,7 @@ export const ROUTES = [
   ["GET", "/connections/{id}/balances", false, "account:read"],
   ["GET", "/connections/{id}/trades", false, "account:read"],
   ["GET", "/connections/{id}/trades/{tradeId}", false, "account:read"],
+  ["POST", "/connections/{id}/trades/sync", false, "account:read"],
   ["POST", "/connections/{id}/orders", true, "trading"],
   ["DELETE", "/connections/{id}/orders/{clientOrderId}", true, "trading"],
   ["DELETE", "/connections/{id}/orders", true, "trading"],
@@ -206,15 +207,30 @@ export const connections = {
   orders: (id) => request("GET", `/connections/${encodeURIComponent(id)}/orders`),
   balances: (id) => request("GET", `/connections/${encodeURIComponent(id)}/balances`),
   /**
-   * One page of this connection's closed-trade history, newest close first.
+   * One page of this connection's closed trades as the venue records them, newest close first. Read
+   * from the terminal's cache: it never asks the venue — `syncTrades` does, and `sync` in the answer
+   * says how that load stands.
    * @param {string} id
    * @param {{page?: number, pageSize?: number, symbol?: string, fromMs?: number, toMs?: number}} [params]
    *   `fromMs`/`toMs` bound the CLOSE time, half-open: `[fromMs, toMs)`.
    */
   trades: (id, params) => request("GET", `/connections/${encodeURIComponent(id)}/trades`, { params }),
-  /** One closed trade with its individual fills. */
-  trade: (id, tradeId) =>
-    request("GET", `/connections/${encodeURIComponent(id)}/trades/${encodeURIComponent(tradeId)}`),
+  /**
+   * One closed trade with its individual fills.
+   * @param {string} id
+   * @param {number | string} tradeId
+   * @param {{fills?: "cache" | "fetch"}} [params] `fetch` asks the venue for fills the cache lacks.
+   */
+  trade: (id, tradeId, params) =>
+    request("GET", `/connections/${encodeURIComponent(id)}/trades/${encodeURIComponent(tradeId)}`, { params }),
+  /**
+   * Ask the venue for this connection's history, at most the last 30 days. Answers at once with the
+   * period queued; progress rides `sync` on `trades()`.
+   * @param {string} id
+   * @param {{fromMs?: number, toMs?: number}} [params] Clamped to the last 30 days.
+   */
+  syncTrades: (id, params) =>
+    request("POST", `/connections/${encodeURIComponent(id)}/trades/sync`, { params }),
 };
 
 /**

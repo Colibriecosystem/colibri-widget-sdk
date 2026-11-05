@@ -96,26 +96,62 @@ trades(
 
 Scope: `account:read`.
 
-Closed-trade history — the terminal's own record, which the venue does not keep in this form. Newest
-close first: `{ connectionId, trades, page, pageSize, totalCount, totalPages }`. A row has `id`, the
-side (`Long` or `Short`), entry and exit prices, quantity, turnover, `netPnl`, `pnlPercent`,
-commission, funding, and the open and close times. `page` counts from 1, `pageSize` is 1–500 (default
-100). `fromMs` and `toMs` bound the close time as a half-open `[fromMs, toMs)`, so adjacent windows
-never count the trade on the seam twice. A row may be amended after it is written: the terminal first
-computes it itself, then overwrites it with the venue's numbers — re-read rather than cache forever.
+Closed trades as the venue records them — what the Your Trades window shows in its New mode. The
+terminal loads them from the venue into its cache, and this call reads that cache: it never asks the
+venue itself — [`connections.syncTrades()`](#connections-sync-trades) does. Newest close first:
+`{ connectionId, trades, page, pageSize, totalCount, totalPages, sync }`. A row has `id`, the side
+(`Long` or `Short`), entry and exit prices, quantity, turnover, `netPnl`, `pnlPercent`, commission,
+funding, the liquidation fee `liquidationFee`, the open and close times, `venueKey` and `updatedAtMs`.
+`page` counts from 1, `pageSize` is 1–500 (default 100). `fromMs` and `toMs` bound the close time as a
+half-open `[fromMs, toMs)`, so adjacent windows never count the trade on the seam twice.
+
+A row's `id` is not stable across loads: the cache is reset when the connection's account changes, and
+a rebuild drops stale rows. Know a trade by `venueKey` — the venue's own id for it — and tell whether
+it changed by `updatedAtMs`. `sync` is how this connection's load stands: `state` (`Queued`, `Running`,
+`Done`, `Partial`, `Unsupported`, `KeyRejected`, `RateLimited`, `Failed`), requests done and planned,
+when a rate-limited load may try again, and how far back the venue keeps history at all; `null` means
+the terminal has not loaded this connection this session. A storage failure answers `500 internal`,
+never an empty page.
 
 ### <a id="connections-trade"></a>`connections.trade()`
 
 ```ts decl
-trade(id: string, tradeId: number | string): Promise<unknown>;
+trade(id: string, tradeId: number | string, params?: { fills?: "cache" | "fetch" }): Promise<unknown>;
 ```
 
 Scope: `account:read`.
 
-One closed trade with its fills: `{ connectionId, trade, fills }`, fills oldest first, each with the
-price, the quantity in coins and in the quote currency, the commission, the side, the time and the
-venue's trade id. A trade that does not exist and a trade of another connection answer the same
-`404`: anything else would report what exists outside this connection.
+One closed trade with its fills: `{ connectionId, trade, fills, fillsComplete, fillsOutcome }`, fills
+oldest first, each with the price, the quantity in coins and in the quote currency, the commission, the
+side, the time, the venue's trade id and `isOpening` — whether the fill opened or added to the position
+(`null` where the venue did not say). A trade that does not exist and a trade of another connection
+answer the same `404`: anything else would report what exists outside this connection.
+
+By default (`fills: "cache"`) the fills come from the cache; `fillsComplete: true` means they are all
+there. `fills: "fetch"` asks the venue for the ones the cache lacks — a paid venue call, paced like a
+load. If the venue does not answer, the trade still comes back (`200`) with an empty `fills`,
+`fillsComplete: false` and the reason in `fillsOutcome`: `unsupported`, `failed`, `rateLimited` or
+`authRejected`.
+
+### <a id="connections-sync-trades"></a>`connections.syncTrades()`
+
+```ts decl
+syncTrades(
+  id: string,
+  params?: { fromMs?: number; toMs?: number },
+): Promise<{ status: "accepted"; connectionId: string; fromMs: number; toMs: number }>;
+```
+
+Scope: `account:read`.
+
+Needs Colibri 1.4.3 or newer: an older terminal answers `404 not_found`.
+
+Asks the venue for this connection's history over `[fromMs, toMs)`, no further back than 30 days. An
+earlier `fromMs` is raised to that floor and a `toMs` in the future is cut to now. The `202` answer
+comes at once and names the period actually queued. Progress rides `sync` on
+[`connections.trades()`](#connections-trades): poll the list and read it. The request merges with a
+load already running and is paced like a request from the Your Trades window; what the cache already holds
+is not loaded again.
 
 ## <a id="trading"></a>trading
 
