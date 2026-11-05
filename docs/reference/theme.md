@@ -181,6 +181,7 @@ body {
 | `--colibri-tab-active` | Активная вкладка |
 | `--colibri-tab-hover` | Вкладка под курсором |
 | `--colibri-tab-attention` | Сигнальный уровень на вкладке |
+| `--colibri-panel-divider` | Разделитель между стаканами |
 
 **Цвета отметок на вкладках**
 

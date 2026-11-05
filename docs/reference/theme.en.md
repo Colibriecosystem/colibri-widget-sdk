@@ -184,6 +184,7 @@ a fallback.
 | `--colibri-tab-active` | Active tab |
 | `--colibri-tab-hover` | Tab hover |
 | `--colibri-tab-attention` | Tab signal alert |
+| `--colibri-panel-divider` | Divider between panels |
 
 **Tab mark colours**
 
