@@ -18,7 +18,7 @@ Code → Project folder.
 
 ## Editing
 
-Node.js 20 or newer. In the project folder:
+Node.js 20.19+ or 22.12+. In the project folder:
 
 ```bash
 npm install
