@@ -17,8 +17,8 @@ hot reload.
 
 The terminal always loads a **subfolder**, never the project root: the root holds the READMEs,
 `node_modules` and `.git`, and the terminal hashes and watches everything it loads. A Vite
-starter's zip carries its ready `dist/` build, so it runs at once without Node.js; Node.js 20+ is
-needed to edit it.
+starter's zip carries its ready `dist/` build, so it runs at once without Node.js; Node.js 20.19+
+or 22.12+ is needed to edit it.
 
 ## For whoever changes the starters
 

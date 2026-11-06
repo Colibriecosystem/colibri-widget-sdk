@@ -313,8 +313,8 @@ bundled: [publishing.en.md#hosted](publishing.en.md#hosted).
 In **A new project from a template**, pick **TypeScript + React** — the tile marked **Node.js**. The
 terminal loads the template's ready `dist/` build, so the widget runs at once, without Node.js.
 
-To edit the code you need Node.js 20 or newer. The **Code** section shows **Next: edit the sources**
-— two commands to run in the project folder (**Open the project folder**):
+To edit the code you need Node.js 20.19+ or 22.12+. The **Code** section shows **Next: edit the
+sources** — two commands to run in the project folder (**Open the project folder**):
 
 ```bash
 npm install

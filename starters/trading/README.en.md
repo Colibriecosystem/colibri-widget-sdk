@@ -37,7 +37,7 @@ a click in the order book.
 
 ## Editing
 
-Node.js 20 or newer:
+Node.js 20.19+ or 22.12+:
 
 ```bash
 npm install
