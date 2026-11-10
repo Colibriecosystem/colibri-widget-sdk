@@ -48,7 +48,7 @@ override a role in the colour settings, and a widget built on roles follows.
 
 ## <a id="elements"></a>Palette elements
 
-Besides the roles, the terminal hands over every colour of its palette — 94 elements of the order book,
+Besides the roles, the terminal hands over every colour of its palette — 99 elements of the order book,
 the trades tape, the clusters, the chart and the window chrome. A variable's name is `--colibri-`
 followed by the element's name in hyphenated lower case. Elements are parts of the terminal's own
 drawing, not a vocabulary for widgets: a new terminal version may rename, add or remove one, and then
@@ -57,7 +57,7 @@ when you need exactly that terminal colour — the liquidation bubble from the t
 a fallback.
 
 <details>
-<summary>All 94 element variables</summary>
+<summary>All 99 element variables</summary>
 
 **Orderbook ladder**
 
@@ -175,6 +175,10 @@ a fallback.
 | `--colibri-chart-trade-buy` | Closed trade buy marker |
 | `--colibri-chart-trade-sell` | Closed trade sell marker |
 | `--colibri-chart-trade-connector` | Closed trade connector |
+| `--colibri-trade-card-entry` | Trade chart: entry |
+| `--colibri-trade-card-exit` | Trade chart: exit |
+| `--colibri-trade-card-profit` | Trade chart: profit label |
+| `--colibri-trade-card-loss` | Trade chart: loss label |
 
 **App chrome**
 
